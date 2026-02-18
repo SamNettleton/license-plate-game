@@ -1,23 +1,22 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Personal editor settings
+.vscode/
+*.code-workspace
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# --- Python (Backend) ---
+# Ignores pycache and compiled files anywhere in the project
+**/__pycache__/
+**/*.py[cod]
+# Ignores the virtual environment folder
+**/venv/
+**/.venv/
 
-# testing
-/coverage
+# --- JavaScript/TypeScript (Frontend) ---
+# Ignores the massive dependencies folder
+**/node_modules/
+# Ignores the production build folder (we build this in Docker instead)
+**/dist/
 
-# production
-/build
-
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# --- Environment & Secrets ---
+# NEVER commit these
+**/.env
+**/.env.local

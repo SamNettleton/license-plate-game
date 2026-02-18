@@ -1,11 +1,21 @@
-import logo from './logo.svg';
-import './App.css';
+import { useNavigate } from 'react-router-dom';
 
-function App() {
+import { Button } from '@components';
+
+function Home() {
+  const navigate = useNavigate();
+
+  const practicePage = () => {
+    navigate('/practice');
+  };
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+        <Button variant="contained">Daily Game</Button>
+        <Button variant="contained" onClick={practicePage}>
+          Practice
+        </Button>
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
@@ -22,4 +32,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;

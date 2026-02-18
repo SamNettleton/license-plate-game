@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      - DATABASE_URL=your_db_info_if_needed
+    ports:
+      - '8000:8000'
+
+  frontend:
+    build:
+      context: ./frontend
+      # This passes your production URL into the Vite build process
+      args:
+        - VITE_API_URL=https://api.radrabbit.xyz
+    restart: always
+    ports:
+      - '80:80'
