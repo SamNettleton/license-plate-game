@@ -39,7 +39,8 @@ jobs:
           # This looks into your /backend or /frontend folder based on the matrix
           context: ./${{ matrix.service }}
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/license-plate-${{ matrix.service }}:latest
+          # Hardcode respository owner to lowercase
+          tags: ghcr.io/samnettleton/license-plate-${{ matrix.service }}:latest
           # Passing the build arg for the frontend specifically
           build-args: |
             VITE_API_URL=https://api.licenseplate.radrabbit.xyz
