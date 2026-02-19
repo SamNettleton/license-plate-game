@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchRandomPlate } from '../api/plateService';
-import Game from './Game';
+import Game from '@/components/game/Game';
 
 function Practice() {
   // 'queryKey' handles caching; 'queryFn' is your service call
@@ -12,7 +12,9 @@ function Practice() {
   } = useQuery({
     queryKey: ['randomPlate'],
     queryFn: fetchRandomPlate,
-    staleTime: 0, // Ensures we get a fresh plate when we ask
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
   console.log('plate:', challenge);
 
@@ -22,7 +24,11 @@ function Practice() {
   return (
     <div className="App">
       <button onClick={() => refetch()}>New Random Plate</button>
-      <Game plate={challenge.sequence} solutionsCount={challenge.solutionsCount}></Game>
+      <Game
+        key={challenge.sequence}
+        plate={challenge.sequence}
+        solutionsCount={challenge.solutionsCount}
+      ></Game>
     </div>
   );
 }

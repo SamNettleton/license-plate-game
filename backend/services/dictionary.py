@@ -1,7 +1,7 @@
 from wordfreq import top_n_list
 
 # Load these ONCE at the module level
-COMMON_WORDS_10K = set(top_n_list('en', 10000))
+COMMON_WORDS_10K = set(top_n_list('en', 40000))
 
 def validate_word(word: str) -> bool:
     return word in COMMON_WORDS_10K
