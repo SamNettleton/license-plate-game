@@ -8,7 +8,8 @@
     "baseUrl": ".",
     "paths": {
       "@components": ["src/material-ui/index.ts"],
-      "@icons": ["src/icons/index.ts"]
+      "@icons": ["src/icons/index.ts"],
+      "@/*": ["./src/*"]
     },
     "types": ["vitest/globals", "@testing-library/jest-dom", "vite/client"],
 

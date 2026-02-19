@@ -5,9 +5,9 @@ import { IconButton, Mode, ThemeProvider, useColorScheme, CssBaseline } from '@c
 import { LightModeIcon, DarkModeIcon } from '@icons';
 import { theme } from './material-ui/Theme';
 
-import Home from './components/Home';
-import About from './components/About';
-import Practice from './components/Practice';
+import Home from '@/pages/Home';
+import About from '@/pages/About';
+import Practice from '@/pages/Practice';
 
 function App() {
   const queryClient = new QueryClient();
