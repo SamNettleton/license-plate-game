@@ -12,7 +12,7 @@ services:
       context: ./frontend
       # This passes your production URL into the Vite build process
       args:
-        - VITE_API_URL=https://api.radrabbit.xyz
+        - VITE_API_URL=https://api.licenseplate.radrabbit.xyz/api
     restart: always
     ports:
       - '80:80'
