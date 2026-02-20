@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { checkWordValidity } from '../../api/wordService';
 import PuzzleDisplay from './PuzzleDisplay';
-import ResultDisplay from './ResultDisplay';
+import ResultDisplay from './ResultDisplay/ResultDisplay';
+import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
 import { Box, Grid, Fade } from '@components';
 import { gameReducer, initialState } from './gameReducer';
 
@@ -57,6 +58,10 @@ function Game({ plate, solutionsCount }: Props) {
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, md: 6 }}>
+        <Box sx={{ display: { md: 'none' } }}>
+          <MobileResultDisplay solutions={state.solutions}></MobileResultDisplay>
+        </Box>
+
         <Fade in={Boolean(showAlert)}>
           <Box sx={feedbackStyles}>{state.lastFeedback?.message}</Box>
         </Fade>
