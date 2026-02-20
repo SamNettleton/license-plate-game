@@ -4,7 +4,6 @@ import PuzzleDisplay from './PuzzleDisplay';
 import ResultDisplay from './ResultDisplay/ResultDisplay';
 import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
 import { Box, Grid, Fade } from '@components';
-
 import { gameReducer, initialState } from './gameReducer';
 
 type Props = {
