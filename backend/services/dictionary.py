@@ -17,14 +17,13 @@ def validate_word(db: Session, word: str) -> bool:
 
 def find_matches_for_sequence(sequence: str) -> list[str]:
     """
-    Finds matches only within the top 20k list. 
-    This is faster and ensures plates are 'playable'.
+    Finds words containing the 3-letter sequence in order only within the top 20k list.
     """
     sequence = sequence.lower()
     matches = []
     
     for word in COMMON_WORDS_20K:
-        # Optimized logic to find letters in order (e.g., B...T...R)
+        # Find letters in order (e.g., B...T...R)
         it = iter(word.lower())
         if all(char in it for char in sequence):
             matches.append(word)

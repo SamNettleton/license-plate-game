@@ -8,7 +8,6 @@ def verify_word_against_sequence(word: str, sequence: str) -> bool:
     word = word.lower()
     sequence = sequence.lower()
     
-    # Use an iterator to check if letters exist in sequence
     it = iter(word)
     return all(char in it for char in sequence)
 
