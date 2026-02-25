@@ -1,16 +1,18 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from database import get_db
 from schemas.words import WordCheckRequest, WordCheckResponse
 from services import dictionary
 
 router = APIRouter(prefix="/words", tags=["words"])
 
 @router.post("/check", response_model=WordCheckResponse)
-async def check_word(payload: WordCheckRequest):
+async def check_word(payload: WordCheckRequest, db: Session = Depends(get_db)):
     word = payload.word.strip().lower()
     seq = payload.sequence.strip().lower()
 
     # 1. Is it a real word in our dictionary?
-    if not dictionary.validate_word(word):
+    if not dictionary.validate_word(db, word):
         return {
             "is_valid": False, 
             "is_common": False, 
