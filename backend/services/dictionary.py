@@ -15,26 +15,15 @@ def validate_word(db: Session, word: str) -> bool:
     result = db.execute(query, {"w": word}).scalar()
     return result
 
-def verify_word_against_sequence(word: str, sequence: str) -> bool:
-    """
-    Checks if a given word is a valid solution for a given sequence
-    """
-    word = word.lower()
-    sequence = sequence.lower()
-    
-    # Use an iterator to check if letters exist in sequence
-    it = iter(word)
-    return all(char in it for char in sequence)
-
 def find_matches_for_sequence(sequence: str) -> list[str]:
     """
-    Finds all words containing the 3-letter sequence in order.
+    Finds words containing the 3-letter sequence in order only within the top 20k list.
     """
     sequence = sequence.lower()
     matches = []
     
     for word in COMMON_WORDS_20K:
-        # Optimized logic to find letters in order (e.g., B...T...R)
+        # Find letters in order (e.g., B...T...R)
         it = iter(word.lower())
         if all(char in it for char in sequence):
             matches.append(word)
