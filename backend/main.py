@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from router import plate
 from router import words
+from router import system
 
 app = FastAPI()
 
@@ -22,3 +23,4 @@ app.add_middleware(
 
 app.include_router(plate.router, prefix="/api")
 app.include_router(words.router, prefix="/api")
+app.include_router(system.router, prefix="/api")
