@@ -47,7 +47,6 @@ function Game({ plate, solutionsCount, mode }: Props) {
           guess: state.guess,
           feedback: result.message,
           points: result.points,
-          plate: plate,
           mode: mode,
         });
       } else {

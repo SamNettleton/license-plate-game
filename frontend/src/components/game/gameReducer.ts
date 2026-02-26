@@ -14,7 +14,6 @@ export type GameAction =
       guess: string;
       feedback: string;
       points: number;
-      plate: string;
       mode: GameMode;
     }
   | { type: 'RESET_GAME' }
@@ -75,7 +74,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         guess: '',
         solutions: updatedSolutions,
-        points: state.points + action.points,
+        points: updatedPoints,
         lastFeedback: { message: action.feedback, timestamp: Date.now() },
       };
     case 'RESET_GAME':
