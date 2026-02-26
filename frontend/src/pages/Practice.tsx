@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchRandomPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
-import { GameMode } from '@/constants/game';
+import { GameMode, STORAGE_KEY } from '@/constants/game';
 
-const STORAGE_KEY = 'lp_practice_current_plate';
+const PLATE_STORAGE_KEY = 'lp_practice_current_plate';
+const GUESSES_STORAGE_KEY = STORAGE_KEY[GameMode.PRACTICE];
 
 function Practice() {
   const queryClient = useQueryClient();
@@ -22,7 +23,8 @@ function Practice() {
   });
 
   const handleNewPlate = async () => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PLATE_STORAGE_KEY);
+    localStorage.removeItem(GUESSES_STORAGE_KEY);
     queryClient.invalidateQueries({ queryKey: ['randomPlate'] });
   };
 
@@ -43,13 +45,13 @@ function Practice() {
 }
 
 const fetchPlate = async () => {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = localStorage.getItem(PLATE_STORAGE_KEY);
   if (saved) {
     return JSON.parse(saved);
   }
 
   const newPlate = await fetchRandomPlate();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(newPlate));
+  localStorage.setItem(PLATE_STORAGE_KEY, JSON.stringify(newPlate));
   return newPlate;
 };
 
