@@ -7,9 +7,9 @@ export type GameState = {
 
 export type GameAction =
   | { type: 'SET_GUESS'; payload: string }
-  | { type: 'ADD_SOLUTION'; payload: string; points: number }
+  | { type: 'ADD_SOLUTION'; guess: string; feedback: string; points: number }
   | { type: 'RESET_GAME' }
-  | { type: 'SET_FEEDBACK_MESSAGE'; payload: string };
+  | { type: 'SET_FEEDBACK_MESSAGE'; message: string };
 
 export const initialState: GameState = {
   guess: '',
@@ -26,9 +26,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         guess: '',
-        solutions: [action.payload, ...state.solutions],
+        solutions: [action.guess, ...state.solutions],
         points: state.points + action.points,
-        lastFeedback: { message: `Correct! +${action.points}`, timestamp: Date.now() },
+        lastFeedback: { message: action.feedback, timestamp: Date.now() },
       };
     case 'RESET_GAME':
       return initialState;
@@ -36,7 +36,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         guess: '',
-        lastFeedback: { message: action.payload, timestamp: Date.now() },
+        lastFeedback: { message: action.message, timestamp: Date.now() },
       };
     default:
       return state;

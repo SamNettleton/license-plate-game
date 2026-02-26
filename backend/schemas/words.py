@@ -6,4 +6,5 @@ class WordCheckRequest(BaseModel):
 
 class WordCheckResponse(BaseModel):
     is_valid: bool
-    message: str   # e.g., "Correct!", "Missing a letter", or "Not a real word"
+    message: str   # e.g., "Correct!", "Missing a letter", or "Not a real word",
+    points: int = 0

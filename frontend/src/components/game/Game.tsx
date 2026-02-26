@@ -27,14 +27,14 @@ function Game({ plate, solutionsCount }: Props) {
     const timer = setTimeout(() => {
       setShowAlert(false);
     }, 2000);
-    // 3. Cleanup: If a NEW message comes in before 3s,
+    // 3. Cleanup: If a NEW message comes in before 2s,
     return () => clearTimeout(timer);
   }, [state.lastFeedback]);
 
   const checkGuess = async () => {
     //setIsLoading(true);
     if (state.solutions.includes(state.guess)) {
-      dispatch({ type: 'SET_FEEDBACK_MESSAGE', payload: 'Already found!' });
+      dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: 'Already found!' });
       return;
     }
     try {
@@ -42,11 +42,12 @@ function Game({ plate, solutionsCount }: Props) {
       if (result.is_valid) {
         dispatch({
           type: 'ADD_SOLUTION',
-          payload: state.guess,
-          points: 10,
+          guess: state.guess,
+          feedback: result.message,
+          points: result.points,
         });
       } else {
-        dispatch({ type: 'SET_FEEDBACK_MESSAGE', payload: 'Not in word list' });
+        dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: result.message });
       }
     } catch (err) {
       console.error(err);
