@@ -3,7 +3,6 @@ import { fetchDailyPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
 
 function Daily() {
-  // 'queryKey' handles caching; 'queryFn' is your service call
   const {
     data: challenge,
     isLoading,

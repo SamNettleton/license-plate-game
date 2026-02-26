@@ -3,7 +3,6 @@ import { fetchRandomPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
 
 function Practice() {
-  // 'queryKey' handles caching; 'queryFn' is your service call
   const {
     data: challenge,
     isLoading,
