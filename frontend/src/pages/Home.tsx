@@ -5,6 +5,9 @@ import { Button } from '@components';
 function Home() {
   const navigate = useNavigate();
 
+  const dailyPage = () => {
+    navigate('/daily');
+  };
   const practicePage = () => {
     navigate('/practice');
   };
@@ -12,7 +15,9 @@ function Home() {
   return (
     <div className="App">
       <header className="App-header">
-        <Button variant="contained">Daily Game</Button>
+        <Button variant="contained" onClick={dailyPage}>
+          Daily Game
+        </Button>
         <Button variant="contained" onClick={practicePage}>
           Practice
         </Button>
