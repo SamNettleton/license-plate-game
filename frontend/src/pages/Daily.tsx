@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchDailyPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
+import { GameMode } from '@/constants/game';
 
 function Daily() {
   const {
@@ -24,6 +25,7 @@ function Daily() {
         key={challenge.sequence}
         plate={challenge.sequence}
         solutionsCount={challenge.solutionsCount}
+        mode={GameMode.DAILY}
       ></Game>
     </div>
   );

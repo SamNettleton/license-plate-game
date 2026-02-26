@@ -1,20 +1,24 @@
 import * as React from 'react';
-import { checkWordValidity } from '../../api/wordService';
+import { checkWordValidity } from '@/api/wordService';
 import PuzzleDisplay from './PuzzleDisplay';
 import ResultDisplay from './ResultDisplay/ResultDisplay';
 import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
 import { Box, Grid, Fade } from '@components';
-import { gameReducer, initialState } from './gameReducer';
+import { gameReducer, createInitialState } from './gameReducer';
+import { GameMode } from '@/constants/game';
 
 type Props = {
   plate: string;
   solutionsCount: Number;
+  mode: GameMode;
 };
 
-function Game({ plate, solutionsCount }: Props) {
+function Game({ plate, solutionsCount, mode }: Props) {
   // TODO: Create "bar" for solutions count to show progress towards complete solve
   console.log('solutionsCount:', solutionsCount);
-  const [state, dispatch] = React.useReducer(gameReducer, initialState);
+  const [state, dispatch] = React.useReducer(gameReducer, { plate, mode }, () =>
+    createInitialState(plate, mode),
+  );
 
   // Alert handling for displaying guess results
   const [showAlert, setShowAlert] = React.useState(false);
@@ -45,6 +49,8 @@ function Game({ plate, solutionsCount }: Props) {
           guess: state.guess,
           feedback: result.message,
           points: result.points,
+          plate: plate,
+          mode: mode,
         });
       } else {
         dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: result.message });

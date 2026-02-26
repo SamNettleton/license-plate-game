@@ -1,3 +1,5 @@
+import { GameMode, STORAGE_PREFIX } from '@/constants/game';
+
 export type GameState = {
   guess: string;
   solutions: string[];
@@ -7,7 +9,14 @@ export type GameState = {
 
 export type GameAction =
   | { type: 'SET_GUESS'; payload: string }
-  | { type: 'ADD_SOLUTION'; guess: string; feedback: string; points: number }
+  | {
+      type: 'ADD_SOLUTION';
+      guess: string;
+      feedback: string;
+      points: number;
+      plate: string;
+      mode: GameMode;
+    }
   | { type: 'RESET_GAME' }
   | { type: 'SET_FEEDBACK_MESSAGE'; message: string };
 
@@ -18,15 +27,56 @@ export const initialState: GameState = {
   lastFeedback: null,
 };
 
+/**
+ * Lazy Initializer for useReducer
+ */
+export function createInitialState(plate: string, mode: GameMode): GameState {
+  if (typeof window === 'undefined') return initialState;
+
+  const prefix = STORAGE_PREFIX[mode];
+  const storageKey = `${prefix}${plate}`;
+  const saved = localStorage.getItem(storageKey);
+
+  if (!saved) return initialState;
+
+  try {
+    const parsed = JSON.parse(saved);
+    return {
+      ...initialState,
+      solutions: parsed.solutions || [],
+      points: parsed.points || 0,
+    };
+  } catch (error) {
+    console.error('Malformed save data found:', error);
+    return initialState;
+  }
+}
+
+type SavedProgress = {
+  solutions: string[];
+  points: number;
+};
+
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SET_GUESS':
       return { ...state, guess: action.payload };
     case 'ADD_SOLUTION':
+      const prefix = STORAGE_PREFIX[action.mode]; // Automatically gets 'lp_daily_' or 'lp_practice_'
+      const storageKey = `${prefix}${action.plate}`;
+      const updatedSolutions = [action.guess, ...state.solutions];
+      const updatedPoints = state.points + action.points;
+
+      const progress: SavedProgress = {
+        solutions: updatedSolutions,
+        points: updatedPoints,
+      };
+      localStorage.setItem(storageKey, JSON.stringify(progress));
+
       return {
         ...state,
         guess: '',
-        solutions: [action.guess, ...state.solutions],
+        solutions: updatedSolutions,
         points: state.points + action.points,
         lastFeedback: { message: action.feedback, timestamp: Date.now() },
       };
