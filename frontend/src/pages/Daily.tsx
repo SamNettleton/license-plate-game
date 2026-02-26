@@ -1,16 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchRandomPlate } from '../api/plateService';
+import { fetchDailyPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
 
-function Practice() {
+function Daily() {
   const {
     data: challenge,
     isLoading,
     error,
-    refetch,
   } = useQuery({
-    queryKey: ['randomPlate'],
-    queryFn: fetchRandomPlate,
+    queryKey: ['dailyPlate'],
+    queryFn: fetchDailyPlate,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -21,7 +20,6 @@ function Practice() {
 
   return (
     <div className="App">
-      <button onClick={() => refetch()}>New Random Plate</button>
       <Game
         key={challenge.sequence}
         plate={challenge.sequence}
@@ -31,4 +29,4 @@ function Practice() {
   );
 }
 
-export default Practice;
+export default Daily;
