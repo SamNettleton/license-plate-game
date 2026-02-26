@@ -16,7 +16,6 @@ async def check_word(payload: WordCheckRequest, db: Session = Depends(get_db)):
     if not game.verify_word_against_sequence(word, seq):
         return {
             "is_valid": False, 
-            "is_common": True, 
             "message": f"Word must contain {seq.upper()} in order."
         }
     
@@ -24,12 +23,12 @@ async def check_word(payload: WordCheckRequest, db: Session = Depends(get_db)):
     if not dictionary.validate_word(db, word):
         return {
             "is_valid": False, 
-            "is_common": False, 
             "message": "That's not in our dictionary!"
         }
 
+    points = game.calculate_points_for_word(word)
     return {
-        "is_valid": True, 
-        "is_common": True, 
-        "message": "Nice one!"
+        "is_valid": True,  
+        "message": f"Nice one! +{points}",
+        "points": points
     }

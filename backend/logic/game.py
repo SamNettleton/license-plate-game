@@ -24,4 +24,19 @@ def generate_valid_plate(max_attempts=50):
             return letters, len(solutions)
     
     # Fallback to a guaranteed common sequence if we're extremely unlucky
-    return "PAR", 100 
+    return "PAR", 100
+
+def calculate_points_for_word(word: str) -> int:
+    """
+    Business Logic: Defines scoring system
+    """
+    return 5 + len(word)
+
+def calculate_total_points(solutions: list[str]) -> int:
+    """
+    Helper method to calculate the total "goal" points for a given word list
+    """
+    total_points = 0
+    for solution in solutions:
+        total_points += calculate_points_for_word(solution)
+    return total_points
