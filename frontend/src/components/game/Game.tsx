@@ -16,9 +16,7 @@ type Props = {
 function Game({ plate, solutionsCount, mode }: Props) {
   // TODO: Create "bar" for solutions count to show progress towards complete solve
   console.log('solutionsCount:', solutionsCount);
-  const [state, dispatch] = React.useReducer(gameReducer, { plate, mode }, () =>
-    createInitialState(plate, mode),
-  );
+  const [state, dispatch] = React.useReducer(gameReducer, { mode }, () => createInitialState(mode));
 
   // Alert handling for displaying guess results
   const [showAlert, setShowAlert] = React.useState(false);

@@ -1,4 +1,4 @@
-import { GameMode, STORAGE_PREFIX } from '@/constants/game';
+import { GameMode, STORAGE_KEY } from '@/constants/game';
 
 export type GameState = {
   guess: string;
@@ -30,11 +30,10 @@ export const initialState: GameState = {
 /**
  * Lazy Initializer for useReducer
  */
-export function createInitialState(plate: string, mode: GameMode): GameState {
+export function createInitialState(mode: GameMode): GameState {
   if (typeof window === 'undefined') return initialState;
 
-  const prefix = STORAGE_PREFIX[mode];
-  const storageKey = `${prefix}${plate}`;
+  const storageKey = STORAGE_KEY[mode];
   const saved = localStorage.getItem(storageKey);
 
   if (!saved) return initialState;
@@ -62,8 +61,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_GUESS':
       return { ...state, guess: action.payload };
     case 'ADD_SOLUTION':
-      const prefix = STORAGE_PREFIX[action.mode]; // Automatically gets 'lp_daily_' or 'lp_practice_'
-      const storageKey = `${prefix}${action.plate}`;
+      const storageKey = STORAGE_KEY[action.mode];
       const updatedSolutions = [action.guess, ...state.solutions];
       const updatedPoints = state.points + action.points;
 

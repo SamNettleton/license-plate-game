@@ -3,7 +3,7 @@ export enum GameMode {
   PRACTICE = 'practice',
 }
 
-export const STORAGE_PREFIX = {
-  [GameMode.DAILY]: 'lp_daily_',
-  [GameMode.PRACTICE]: 'lp_practice_',
+export const STORAGE_KEY = {
+  [GameMode.DAILY]: 'lp_daily',
+  [GameMode.PRACTICE]: 'lp_practice',
 } as const;
