@@ -27,5 +27,5 @@ def find_matches_for_sequence(sequence: str) -> list[str]:
         it = iter(word.lower())
         if all(char in it for char in sequence):
             matches.append(word)
-            
+
     return sorted(matches, key=len)

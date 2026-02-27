@@ -1,21 +1,26 @@
 from fastapi import APIRouter
-from datetime import datetime
-import random
+from datetime import datetime, timezone
+from random import Random
 from schemas.plate import PlateChallenge
 from logic import game
+import hashlib
 
 router = APIRouter(prefix="/plate", tags=["plate"])
 
 @router.get("/daily", response_model=PlateChallenge)
-async def get_daily_plate():
-    # Set the seed ONCE at the start of the daily request
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    random.seed(today_str)
+async def get_daily_plate(date: str = None):
+    if not date:
+        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     
-    letters, count, goal_points = game.generate_valid_plate()
+    # Create the stable seed
+    seed_value = int(hashlib.sha256(date.encode()).hexdigest(), 16) % (10**8)
     
-    # Reset seed to None so subsequent 'random' calls aren't affected
-    random.seed(None)
+    # Create a LOCAL instance of the random generator
+    local_rng = Random(seed_value)
+    
+    # Pass this instance into your generator
+    # No more random.seed() or random.seed(None) required!
+    letters, count, goal_points = game.generate_valid_plate(rng=local_rng)
     
     return {
         "sequence": letters,

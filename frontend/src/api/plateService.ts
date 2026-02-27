@@ -31,11 +31,21 @@ export const fetchRandomPlate = async (): Promise<PlateChallenge> => {
  * Fetches the daily 3-letter sequence and the total count of valid solutions.
  */
 export const fetchDailyPlate = async (): Promise<PlateChallenge> => {
-  const { data } = await api.get('/plate/daily');
+  const localDate = getLocalDailyDate();
+  const { data } = await api.get(`/plate/daily?date=${localDate}`);
   // Transform the snake_case from the API to camelCase for the app
   return {
     sequence: data.sequence,
     solutionsCount: data.total_count,
     goalPoints: data.goal_points,
   };
+};
+
+// Get local date in YYYY-MM-DD format without timezone shifting issues
+const getLocalDailyDate = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };

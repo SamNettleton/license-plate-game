@@ -39,6 +39,15 @@ export function createInitialState(mode: GameMode): GameState {
 
   try {
     const parsed = JSON.parse(saved);
+
+    if (mode === 'daily') {
+      const today = new Date().toLocaleDateString('en-CA');
+      if (parsed.lastUpdated !== today) {
+        localStorage.removeItem(storageKey);
+        return initialState;
+      }
+    }
+
     return {
       ...initialState,
       solutions: parsed.solutions || [],
@@ -53,6 +62,7 @@ export function createInitialState(mode: GameMode): GameState {
 type SavedProgress = {
   solutions: string[];
   points: number;
+  lastUpdated: string; // Storing as YYYY-MM-DD
 };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -67,6 +77,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const progress: SavedProgress = {
         solutions: updatedSolutions,
         points: updatedPoints,
+        lastUpdated: new Date().toLocaleDateString('en-CA'),
       };
       localStorage.setItem(storageKey, JSON.stringify(progress));
 
