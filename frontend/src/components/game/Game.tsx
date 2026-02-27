@@ -3,17 +3,19 @@ import { checkWordValidity } from '@/api/wordService';
 import PuzzleDisplay from './PuzzleDisplay';
 import ResultDisplay from './ResultDisplay/ResultDisplay';
 import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
+import ResultBar from './ResultDisplay/ResultBar';
 import { Box, Grid, Fade } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
 import { GameMode } from '@/constants/game';
 
 type Props = {
   plate: string;
-  solutionsCount: Number;
+  solutionsCount: number;
+  goalPoints: number;
   mode: GameMode;
 };
 
-function Game({ plate, solutionsCount, mode }: Props) {
+function Game({ plate, solutionsCount, goalPoints, mode }: Props) {
   // TODO: Create "bar" for solutions count to show progress towards complete solve
   console.log('solutionsCount:', solutionsCount);
   const [state, dispatch] = React.useReducer(gameReducer, { mode }, () => createInitialState(mode));
@@ -62,7 +64,8 @@ function Game({ plate, solutionsCount, mode }: Props) {
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, md: 6 }}>
-        <Box sx={{ display: { md: 'none' } }}>
+        <Box sx={{ display: { md: 'none' }, position: 'relative' }}>
+          <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
           <MobileResultDisplay solutions={state.solutions}></MobileResultDisplay>
         </Box>
 
@@ -77,6 +80,7 @@ function Game({ plate, solutionsCount, mode }: Props) {
         />
       </Grid>
       <Grid size={{ md: 6 }} sx={{ display: { xs: 'none', md: 'block' } }}>
+        <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
         <ResultDisplay solutions={state.solutions}></ResultDisplay>
       </Grid>
     </Grid>

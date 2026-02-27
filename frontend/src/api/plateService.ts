@@ -10,6 +10,7 @@ const api = axios.create({
 export interface PlateChallenge {
   sequence: string;
   solutionsCount: number;
+  goalPoints: number;
 }
 
 /**
@@ -22,6 +23,7 @@ export const fetchRandomPlate = async (): Promise<PlateChallenge> => {
   return {
     sequence: data.sequence,
     solutionsCount: data.total_count,
+    goalPoints: data.goal_points,
   };
 };
 
@@ -34,5 +36,6 @@ export const fetchDailyPlate = async (): Promise<PlateChallenge> => {
   return {
     sequence: data.sequence,
     solutionsCount: data.total_count,
+    goalPoints: data.goal_points,
   };
 };

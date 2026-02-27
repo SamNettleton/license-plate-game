@@ -7,6 +7,9 @@ class PlateChallenge(BaseModel):
     
     # Helpful for showing "0 of 42 words found" in the UI
     total_count: int
+
+    # used for showing goal number of points for progress bar in the UI
+    goal_points: int
     
     # Optional: You could add a 'date' field for the Daily challenge
     date: Optional[str] = None

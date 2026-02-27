@@ -12,21 +12,23 @@ async def get_daily_plate():
     today_str = datetime.now().strftime("%Y-%m-%d")
     random.seed(today_str)
     
-    letters, count = game.generate_valid_plate()
+    letters, count, goal_points = game.generate_valid_plate()
     
     # Reset seed to None so subsequent 'random' calls aren't affected
     random.seed(None)
     
     return {
         "sequence": letters,
-        "total_count": count
+        "total_count": count,
+        "goal_points": goal_points,
     }
 
 @router.get("/random", response_model=PlateChallenge)
 async def get_random_plate():
-    letters, count = game.generate_valid_plate()
+    letters, count, goal_points = game.generate_valid_plate()
     
     return {
         "sequence": letters,
-        "total_count": count
+        "total_count": count,
+        "goal_points": goal_points,
     }
