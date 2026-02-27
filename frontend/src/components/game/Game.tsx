@@ -35,16 +35,17 @@ function Game({ plate, goalPoints, mode }: Props) {
 
   const checkGuess = async () => {
     //setIsLoading(true);
-    if (state.solutions.includes(state.guess)) {
+    const lowercaseGuess = state.guess.toLowerCase();
+    if (state.solutions.includes(lowercaseGuess)) {
       dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: 'Already found!' });
       return;
     }
     try {
-      const result = await checkWordValidity(state.guess, plate);
+      const result = await checkWordValidity(lowercaseGuess, plate);
       if (result.is_valid) {
         dispatch({
           type: 'ADD_SOLUTION',
-          guess: state.guess,
+          guess: lowercaseGuess,
           feedback: result.message,
           points: result.points,
           mode: mode,
