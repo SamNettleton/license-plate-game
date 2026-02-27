@@ -16,4 +16,7 @@ export { default as Fade } from '@mui/material/Fade';
 export { default as Accordion } from '@mui/material/Accordion';
 export { default as AccordionDetails } from '@mui/material/AccordionDetails';
 export { default as AccordionSummary } from '@mui/material/AccordionSummary';
+export { default as LinearProgress } from '@mui/material/LinearProgress';
+export { default as Typography } from '@mui/material/Typography';
+export { default as Stack } from '@mui/material/Stack';
 export type { SupportedColorScheme as Mode } from '@mui/material/styles';

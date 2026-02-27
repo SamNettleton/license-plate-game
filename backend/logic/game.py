@@ -20,8 +20,11 @@ def generate_valid_plate(max_attempts=50):
         letters = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=3))
         solutions = dictionary.find_matches_for_sequence(letters)
         
-        if len(solutions) >= 5:
-            return letters, len(solutions)
+        if len(solutions) >= 10:
+            goal_points = calculate_total_points(solutions)
+            if goal_points > 300:
+                goal_points = 300
+            return letters, len(solutions), goal_points
     
     # Fallback to a guaranteed common sequence if we're extremely unlucky
     return "PAR", 100

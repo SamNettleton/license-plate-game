@@ -25,6 +25,7 @@ function Daily() {
         key={challenge.sequence}
         plate={challenge.sequence}
         solutionsCount={challenge.solutionsCount}
+        goalPoints={challenge.goalPoints}
         mode={GameMode.DAILY}
       ></Game>
     </div>

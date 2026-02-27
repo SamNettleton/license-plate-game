@@ -38,6 +38,7 @@ function Practice() {
         key={challenge.sequence}
         plate={challenge.sequence}
         solutionsCount={challenge.solutionsCount}
+        goalPoints={challenge.goalPoints}
         mode={GameMode.PRACTICE}
       ></Game>
     </div>

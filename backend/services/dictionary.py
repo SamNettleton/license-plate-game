@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 # Load these ONCE at the module level
 # This list is used to generate "goal" words whereas database is used to validate all words
-COMMON_WORDS_20K = set(top_n_list('en', 20000))
+COMMON_WORDS_10K = set(top_n_list('en', 10000))
 
 def validate_word(db: Session, word: str) -> bool:
     """
@@ -22,7 +22,7 @@ def find_matches_for_sequence(sequence: str) -> list[str]:
     sequence = sequence.lower()
     matches = []
     
-    for word in COMMON_WORDS_20K:
+    for word in COMMON_WORDS_10K:
         # Find letters in order (e.g., B...T...R)
         it = iter(word.lower())
         if all(char in it for char in sequence):
