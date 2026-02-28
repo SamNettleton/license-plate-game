@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+  <rect width="512" height="512" rx="64" fill="transparent" />
+  
+  <g filter="url(#glow)">
+    <rect x="0" y="106" width="512" height="300" rx="30" fill="#90caf9" />
+    
+    <text x="50%" y="59%" 
+          dominant-baseline="middle" 
+          text-anchor="middle" 
+          fill="#000000" 
+          font-family="monospace, sans-serif" 
+          font-weight="900" 
+          font-size="260"
+          style="letter-spacing: -8px;">
+      LPG
+    </text>
+  </g>
+</svg>
