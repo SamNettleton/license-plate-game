@@ -20,7 +20,6 @@ export default function ResultDisplay({ points, goalPoints }: Props) {
   };
 
   const currentProgress = getProgressMilestone(currentPercentage);
-  console.log('progress:', currentProgress);
 
   return (
     <Box sx={{ width: '90%', mx: 'auto', my: 2 }}>

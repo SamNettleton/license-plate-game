@@ -1,14 +1,14 @@
 import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { IconButton, Mode, ThemeProvider, useColorScheme, CssBaseline } from '@components';
-import { LightModeIcon, DarkModeIcon } from '@icons';
+import { ThemeProvider, useColorScheme, CssBaseline } from '@components';
 import { theme } from './material-ui/Theme';
 
 import Home from '@/pages/Home';
 import About from '@/pages/About';
 import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
+import Header from './components/Header';
 
 function App() {
   const queryClient = new QueryClient();
@@ -24,14 +24,14 @@ function App() {
 }
 
 function AppContent() {
-  const { mode, setMode } = useColorScheme();
+  const { mode } = useColorScheme();
   if (!mode) {
     return null;
   }
 
   return (
     <Router>
-      <div>{renderThemeIcon(mode, setMode)}</div>
+      <Header />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
@@ -40,23 +40,6 @@ function AppContent() {
       </Routes>
     </Router>
   );
-}
-
-function renderThemeIcon(mode: string, setMode: (theme: Mode) => void) {
-  return mode == 'light' ? (
-    <IconButton aria-label="dark mode" onClick={() => toggleTheme(mode, setMode)}>
-      <DarkModeIcon />
-    </IconButton>
-  ) : (
-    <IconButton aria-label="light mode" onClick={() => toggleTheme(mode, setMode)}>
-      <LightModeIcon />
-    </IconButton>
-  );
-}
-
-function toggleTheme(mode: string, setMode: (theme: Mode) => void) {
-  const newMode = mode == 'light' ? 'dark' : 'light';
-  setMode(newMode);
 }
 
 export default App;
