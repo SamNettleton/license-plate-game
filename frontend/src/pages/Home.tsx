@@ -12,7 +12,7 @@ function Home() {
   const [showInstructions, setShowInstructions] = React.useState(false);
 
   React.useEffect(() => {
-    // Auto-show for new users
+    // Auto-show instructions for new users
     const hasVisited = localStorage.getItem('lp_visited');
     if (!hasVisited) {
       setShowInstructions(true);
@@ -21,31 +21,12 @@ function Home() {
   }, []);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '80vh', // Centers the stack vertically in the viewport
-        px: 2,
-      }}
-    >
-      <Typography
-        variant="h3"
-        component="h1"
-        gutterBottom
-        sx={{
-          fontWeight: 'bold',
-          textAlign: 'center',
-          mb: 4,
-          color: 'primary.main',
-        }}
-      >
+    <Box sx={homeContainerStyles}>
+      <Typography variant="h3" component="h1" gutterBottom sx={gameTitleTypography}>
         License Plate Game
       </Typography>
 
-      <Stack spacing={2} sx={{ width: '100%', maxWidth: '300px' }}>
+      <Stack spacing={2} sx={{ width: '80%', maxWidth: '300px' }}>
         <Button
           variant="contained"
           size="large"
@@ -72,3 +53,19 @@ function Home() {
 }
 
 export default Home;
+
+const homeContainerStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '80vh',
+  px: 2,
+};
+
+const gameTitleTypography = {
+  fontWeight: 'bold',
+  textAlign: 'center',
+  mb: 4,
+  color: 'primary.main',
+};

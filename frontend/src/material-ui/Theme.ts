@@ -29,7 +29,7 @@ export const theme = createTheme({
       defaultProps: {
         className: 'default-button-class',
         style: {
-          borderRadius: '24px',
+          borderRadius: '999px',
           textTransform: 'None',
         },
       },

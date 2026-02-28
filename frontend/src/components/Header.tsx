@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AppBar, Toolbar, IconButton, Box, useColorScheme } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Box, useColorScheme } from '@components';
 import {
   LightModeIcon as LightModeIcon,
   DarkModeIcon as DarkModeIcon,
@@ -38,7 +38,6 @@ export default function Header() {
         </Box>
         {/* Center: The LPG Logo */}
         <Box
-          onClick={() => navigate('/')}
           sx={{
             position: 'absolute',
             left: '50%',

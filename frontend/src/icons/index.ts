@@ -3,3 +3,5 @@ export { default as DarkModeIcon } from '@mui/icons-material/DarkMode';
 export { default as ExpandMoreIcon } from '@mui/icons-material/ExpandMore';
 export { default as HelpOutlineIcon } from '@mui/icons-material/HelpOutline';
 export { default as BackIcon } from '@mui/icons-material/ArrowBackIosNew';
+export { default as SuccessIcon } from '@mui/icons-material/CheckCircleOutline';
+export { default as ErrorIcon } from '@mui/icons-material/HighlightOff';
