@@ -11,15 +11,10 @@ router = APIRouter(prefix="/plate", tags=["plate"])
 async def get_daily_plate(date: str = None):
     if not date:
         date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    
-    # Create the stable seed
+
     seed_value = int(hashlib.sha256(date.encode()).hexdigest(), 16) % (10**8)
-    
-    # Create a LOCAL instance of the random generator
     local_rng = Random(seed_value)
-    
-    # Pass this instance into your generator
-    # No more random.seed() or random.seed(None) required!
+
     letters, count, goal_points = game.generate_valid_plate(rng=local_rng)
     
     return {
