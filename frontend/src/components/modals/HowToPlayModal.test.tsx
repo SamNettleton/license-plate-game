@@ -22,7 +22,7 @@ describe('HowToPlayModal Component', () => {
     render(<HowToPlayModal open={true} onClose={vi.fn()} />);
 
     // The "L P G" example plate heading
-    expect(screen.getByText('L P G')).toBeInTheDocument();
+    expect(screen.getByText('LPG')).toBeInTheDocument();
     // The incorrect example
     expect(screen.getByText(/Goalpost/i)).toBeInTheDocument();
   });

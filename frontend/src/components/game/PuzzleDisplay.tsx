@@ -21,7 +21,7 @@ export default function PuzzleDisplay({
   React.useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (isSubmitting) {
-      timer = setTimeout(() => setShowSpinner(true), 300); // 300ms delay
+      timer = setTimeout(() => setShowSpinner(true), 300);
     } else {
       setShowSpinner(false);
     }
@@ -70,15 +70,49 @@ export default function PuzzleDisplay({
 }
 
 const plateStyles = {
+  position: 'relative',
   width: 'fit-content',
   mx: 'auto',
-  fontSize: '4rem',
+  fontSize: '5rem',
+  fontWeight: '900',
   borderRadius: 4,
-  border: '4px solid',
-  borderColor: 'primary.main',
-  color: 'theme.vars.palette.primary',
-  padding: '1.5rem 4rem 1rem 4rem',
+  bgcolor: 'primary.main',
+  color: 'primary.contrastText',
+  padding: '1.5rem 2.5rem 0.75rem 2.5rem',
   letterSpacing: '0.5rem',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+  textShadow: '0px 2px 2px rgba(0, 0, 0, 0.4), 0px -1px 1px rgba(255, 255, 255, 0.3)',
+  boxShadow: `
+    0px 0px 2px 1px rgba(0, 0, 0, 0.3), 
+    0px 10px 20px rgba(0, 0, 0, 0.2), 
+    inset 0px 0px 0px 1px rgba(255, 255, 255, 0.1)
+  `,
+
+  // "Inner Stripe" overlay
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: '8px',
+    left: '8px',
+    right: '8px',
+    bottom: '8px',
+    border: '3px solid',
+    borderRadius: 3,
+    pointerEvents: 'none',
+    boxShadow: `
+    /* All-around base shadow (Spread: 1px) */
+    0px 0px 2px 1px rgba(0, 0, 0, 0.3),
+    /* Inset all-around shadow (Spread: 1px) */
+    inset 0px 0px 2px 1px rgba(0, 0, 0, 0.2),
+    /* Directional highlight (Top-Left) */
+    -1px -1px 1px rgba(255, 255, 255, 0.3),
+    /* Directional inner highlight (Bottom-Right) */
+    inset -1px -1px 1px rgba(255, 255, 255, 0.2)
+  `,
+  },
 };
 
 const spinnerStyles = {
