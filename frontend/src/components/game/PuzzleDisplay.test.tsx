@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import PuzzleDisplay from './PuzzleDisplay';
 
@@ -42,14 +42,23 @@ describe('PuzzleDisplay Component', () => {
     });
 
     it('shows the spinner after a delay when isSubmitting becomes true', () => {
+      // Tell Vitest to use fake timers
+      vi.useFakeTimers();
+
       render(<PuzzleDisplay {...defaultProps} isSubmitting={true} />);
       const spinner = screen.queryByRole('progressbar'); // Assuming the spinner has role="progressbar"
       expect(spinner).not.toBeInTheDocument(); // Spinner should not be immediately visible
 
       // Fast-forward time by 300ms to trigger the spinner
-      vi.advanceTimersByTime(300);
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
       const delayedSpinner = screen.queryByRole('progressbar');
       expect(delayedSpinner).toBeInTheDocument(); // Spinner should now be visible
+
+      // Restore real timers so other tests aren't affected
+      vi.useRealTimers();
     });
   });
 
