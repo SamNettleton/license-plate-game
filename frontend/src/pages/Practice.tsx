@@ -1,14 +1,12 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { fetchRandomPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
-import { GameMode, STORAGE_KEY } from '@/constants/game';
+import { GameMode } from '@/constants/game';
+import { Box } from '@components';
 
 const PLATE_STORAGE_KEY = 'lp_practice_current_plate';
-const GUESSES_STORAGE_KEY = STORAGE_KEY[GameMode.PRACTICE];
 
 function Practice() {
-  const queryClient = useQueryClient();
-
   const {
     data: challenge,
     isLoading,
@@ -22,26 +20,19 @@ function Practice() {
     refetchOnReconnect: false,
   });
 
-  const handleNewPlate = async () => {
-    localStorage.removeItem(PLATE_STORAGE_KEY);
-    localStorage.removeItem(GUESSES_STORAGE_KEY);
-    queryClient.invalidateQueries({ queryKey: ['randomPlate'] });
-  };
-
   if (isLoading) return <div>Spinning up a new plate...</div>;
   if (error || !challenge) return <div>Error loading game.</div>;
 
   return (
-    <div className="App">
-      <button onClick={handleNewPlate}>New Random Plate</button>
+    <Box>
       <Game
         key={challenge.sequence}
         plate={challenge.sequence}
         solutionsCount={challenge.solutionsCount}
         goalPoints={challenge.goalPoints}
         mode={GameMode.PRACTICE}
-      ></Game>
-    </div>
+      />
+    </Box>
   );
 }
 
