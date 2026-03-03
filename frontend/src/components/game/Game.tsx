@@ -20,24 +20,27 @@ function Game({ plate, goalPoints, mode }: Props) {
 
   // Alert handling for displaying guess results
   const [showAlert, setShowAlert] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (!state.lastFeedback) return;
-    // 1. Show the alert immediately
+    // Show the alert immediately
     setShowAlert(true);
-    // 2. Schedule the hide
+    // Schedule the hide
     const timer = setTimeout(() => {
       setShowAlert(false);
     }, 2000);
-    // 3. Cleanup: If a NEW message comes in before 2s,
+    // Cleanup: If a NEW message comes in before 2s, reset the timer
     return () => clearTimeout(timer);
   }, [state.lastFeedback]);
 
   const checkGuess = async () => {
-    //setIsLoading(true);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const lowercaseGuess = state.guess.toLowerCase();
     if (state.solutions.includes(lowercaseGuess)) {
       dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: 'Already found!' });
+      setIsSubmitting(false);
       return;
     }
     try {
@@ -56,7 +59,7 @@ function Game({ plate, goalPoints, mode }: Props) {
     } catch (err) {
       console.error(err);
     } finally {
-      //setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -74,6 +77,7 @@ function Game({ plate, goalPoints, mode }: Props) {
         <PuzzleDisplay
           plate={plate}
           guess={state.guess}
+          isSubmitting={isSubmitting}
           onGuessChange={(val) => dispatch({ type: 'SET_GUESS', payload: val })}
           onGuessSubmit={checkGuess}
         />

@@ -28,4 +28,6 @@ export { default as Toolbar } from '@mui/material/Toolbar';
 export { default as AppBar } from '@mui/material/AppBar';
 export { default as Tooltip } from '@mui/material/Tooltip';
 export { default as DialogContentText } from '@mui/material/DialogContentText';
+export { default as CircularProgress } from '@mui/material/CircularProgress';
+export { default as InputAdornment } from '@mui/material/InputAdornment';
 export type { SupportedColorScheme as Mode } from '@mui/material/styles';
