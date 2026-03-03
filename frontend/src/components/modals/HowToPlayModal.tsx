@@ -35,7 +35,7 @@ export default function HowToPlayModal({ open, onClose }: HowToPlayProps) {
         </Typography>
 
         <Box sx={exampleContainerStyles}>
-          {/* Mini 3D Stamped Plate */}
+          {/* Mini Plate */}
           <Box sx={miniPlateStyles}>LPG</Box>
 
           {/* Correct Example */}

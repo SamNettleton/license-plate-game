@@ -103,16 +103,13 @@ const plateStyles = {
     borderRadius: 3,
     pointerEvents: 'none',
     boxShadow: `
-    /* 1. All-around base shadow (Spread: 1px) */
-    0px 0px 2px 1px rgba(0, 0, 0, 0.3), 
-
-    /* 2. Inset all-around shadow (Spread: 1px) */
+    /* All-around base shadow (Spread: 1px) */
+    0px 0px 2px 1px rgba(0, 0, 0, 0.3),
+    /* Inset all-around shadow (Spread: 1px) */
     inset 0px 0px 2px 1px rgba(0, 0, 0, 0.2),
-
-    /* 3. Directional highlight (Top-Left) */
+    /* Directional highlight (Top-Left) */
     -1px -1px 1px rgba(255, 255, 255, 0.3),
-
-    /* 4. Directional inner highlight (Bottom-Right) */
+    /* Directional inner highlight (Bottom-Right) */
     inset -1px -1px 1px rgba(255, 255, 255, 0.2)
   `,
   },
