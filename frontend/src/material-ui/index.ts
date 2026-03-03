@@ -26,4 +26,6 @@ export { default as DialogActions } from '@mui/material/DialogActions';
 export { default as Divider } from '@mui/material/Divider';
 export { default as Toolbar } from '@mui/material/Toolbar';
 export { default as AppBar } from '@mui/material/AppBar';
+export { default as Tooltip } from '@mui/material/Tooltip';
+export { default as DialogContentText } from '@mui/material/DialogContentText';
 export type { SupportedColorScheme as Mode } from '@mui/material/styles';

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchDailyPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
 import { GameMode } from '@/constants/game';
+import { Box } from '@components';
 
 function Daily() {
   const {
@@ -20,7 +21,7 @@ function Daily() {
   if (error || !challenge) return <div>Error loading game.</div>;
 
   return (
-    <div className="App">
+    <Box>
       <Game
         key={challenge.sequence}
         plate={challenge.sequence}
@@ -28,7 +29,7 @@ function Daily() {
         goalPoints={challenge.goalPoints}
         mode={GameMode.DAILY}
       ></Game>
-    </div>
+    </Box>
   );
 }
 
