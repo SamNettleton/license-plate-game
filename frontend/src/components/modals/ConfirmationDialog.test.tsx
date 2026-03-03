@@ -42,9 +42,23 @@ describe('ConfirmationDialog', () => {
   });
 
   describe('onClose', () => {
-    it('triggers onClose when clicking outside the dialog', () => {
+    it('triggers onClose when Cancel is clicked', () => {
       const { props } = setup();
-      fireEvent.mouseDown(document);
+      fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+      expect(props.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('triggers onClose when clicking the backdrop', () => {
+      const { props } = setup();
+      const backdrop = document.querySelector('.MuiBackdrop-root');
+
+      if (backdrop) {
+        fireEvent.click(backdrop);
+      } else {
+        const presentation = screen.getByRole('presentation');
+        fireEvent.click(presentation.firstChild as HTMLElement);
+      }
+
       expect(props.onClose).toHaveBeenCalledTimes(1);
     });
   });
