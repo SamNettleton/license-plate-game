@@ -30,12 +30,12 @@ function Game({ plate, goalPoints, mode }: Props) {
     const timer = setTimeout(() => {
       setShowAlert(false);
     }, 2000);
-    // Cleanup: If a NEW message comes in before 2s,
+    // Cleanup: If a NEW message comes in before 2s, reset the timer
     return () => clearTimeout(timer);
   }, [state.lastFeedback]);
 
   const checkGuess = async () => {
-    if (isSubmitting) return; // prevent duplicate submissions
+    if (isSubmitting) return;
     setIsSubmitting(true);
     const lowercaseGuess = state.guess.toLowerCase();
     if (state.solutions.includes(lowercaseGuess)) {

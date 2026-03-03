@@ -58,21 +58,7 @@ export default function PuzzleDisplay({
         />
 
         <Fade in={showSpinner}>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'rgba(255, 255, 255, 0.7)', // Slight white wash in light mode
-              zIndex: 2,
-              borderRadius: 1,
-            }}
-          >
+          <Box sx={spinnerStyles}>
             <CircularProgress size={24} />
           </Box>
         </Fade>
@@ -93,4 +79,18 @@ const plateStyles = {
   color: 'theme.vars.palette.primary',
   padding: '1.5rem 4rem 1rem 4rem',
   letterSpacing: '0.5rem',
+};
+
+const spinnerStyles = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  bgcolor: 'rgba(255, 255, 255, 0.7)',
+  zIndex: 2,
+  borderRadius: 1,
 };
