@@ -4,7 +4,7 @@ import PuzzleDisplay from './PuzzleDisplay';
 import ResultDisplay from './ResultDisplay/ResultDisplay';
 import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
 import ResultBar from './ResultDisplay/ResultBar';
-import { Box, Grid, Fade } from '@components';
+import { Box, Grid } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
 import { GameMode } from '@/constants/game';
 
@@ -21,6 +21,7 @@ function Game({ plate, goalPoints, mode }: Props) {
   // Alert handling for displaying guess results
   const [showAlert, setShowAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!state.lastFeedback) return;
@@ -68,19 +69,29 @@ function Game({ plate, goalPoints, mode }: Props) {
       <Grid size={{ xs: 12, md: 6 }}>
         <Box sx={{ display: { md: 'none' }, position: 'relative' }}>
           <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
-          <MobileResultDisplay solutions={state.solutions}></MobileResultDisplay>
+          <MobileResultDisplay
+            solutions={state.solutions}
+            onToggle={(isOpen) => setIsMobileResultsOpen(isOpen)}
+          ></MobileResultDisplay>
         </Box>
 
-        <Fade in={Boolean(showAlert)}>
-          <Box sx={feedbackStyles}>{state.lastFeedback?.message}</Box>
-        </Fade>
-        <PuzzleDisplay
-          plate={plate}
-          guess={state.guess}
-          isSubmitting={isSubmitting}
-          onGuessChange={(val) => dispatch({ type: 'SET_GUESS', payload: val })}
-          onGuessSubmit={checkGuess}
-        />
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            display: isMobileResultsOpen ? { xs: 'none', md: 'block' } : 'block',
+          }}
+        >
+          <PuzzleDisplay
+            plate={plate}
+            guess={state.guess}
+            isSubmitting={isSubmitting}
+            feedback={state.lastFeedback?.message}
+            showFeedback={showAlert}
+            onGuessChange={(val) => dispatch({ type: 'SET_GUESS', payload: val })}
+            onGuessSubmit={checkGuess}
+          />
+        </Box>
       </Grid>
       <Grid size={{ md: 6 }} sx={{ display: { xs: 'none', md: 'block' } }}>
         <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
@@ -89,23 +100,5 @@ function Game({ plate, goalPoints, mode }: Props) {
     </Grid>
   );
 }
-
-const feedbackStyles = {
-  width: 'fit-content',
-  margin: '0 auto',
-  backgroundColor: (theme: any) =>
-    theme.palette.mode === 'light'
-      ? 'grey.900' // High contrast for light mode
-      : 'grey.800', // Lighter than the background for dark mode
-  color: '#fff', // Snackbars usually stay white-on-dark even in dark mode
-  px: 2,
-  py: 0.75,
-  borderRadius: 1,
-  fontSize: '0.875rem',
-  fontWeight: 500,
-  boxShadow: 3,
-  whiteSpace: 'nowrap',
-  marginBottom: '1rem',
-};
 
 export default Game;

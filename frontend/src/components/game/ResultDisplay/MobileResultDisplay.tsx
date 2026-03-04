@@ -4,13 +4,15 @@ import { ExpandMoreIcon } from '@icons';
 
 type Props = {
   solutions: string[];
+  onToggle: (isOpen: boolean) => void;
 };
 
-export default function MobileResultDisplay({ solutions }: Props) {
+export default function MobileResultDisplay({ solutions, onToggle }: Props) {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   const handleChange = (_: React.SyntheticEvent, expanded: boolean) => {
     setIsExpanded(expanded);
+    onToggle(expanded);
   };
 
   const summaryText = () => {
@@ -29,7 +31,7 @@ export default function MobileResultDisplay({ solutions }: Props) {
       <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={summaryStyles}>
         <Typography noWrap>{summaryText()}</Typography>
       </AccordionSummary>
-      <AccordionDetails sx={detailsStyles(columnCount)}>
+      <AccordionDetails role="region" aria-label="Found solutions" sx={detailsStyles(columnCount)}>
         {solutions.map((solution, index) => (
           <Box key={index} sx={solutionStyles}>
             {solution.charAt(0).toUpperCase() + solution.slice(1).toLowerCase()}
