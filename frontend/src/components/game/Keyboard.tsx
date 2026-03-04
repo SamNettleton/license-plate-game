@@ -67,7 +67,11 @@ const keyRowStyles = (rowIndex: number) => ({
 const keyStyles = (isSpecial: boolean) => ({
   flex: isSpecial ? 1.5 : 1,
   minWidth: 0,
-  height: { xs: '48px', sm: '58px' }, // Shorter height on mobile
+  height: { xs: '48px', sm: '58px' },
+  '@media (max-width: 600px) and (min-height: 700px)': {
+    height: '58px',
+    fontSize: isSpecial ? '0.8rem' : '1.25rem',
+  },
   p: 0,
   borderRadius: '4px !important',
   fontSize: isSpecial ? '0.7rem' : '1.1rem',
