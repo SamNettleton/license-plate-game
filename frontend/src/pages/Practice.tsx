@@ -24,7 +24,7 @@ function Practice() {
   if (error || !challenge) return <div>Error loading game.</div>;
 
   return (
-    <Box>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Game
         key={challenge.sequence}
         plate={challenge.sequence}

@@ -62,7 +62,11 @@ export default function PuzzleDisplay({
 
   return (
     <Box sx={containerStyles}>
+      <Box sx={topSpacerStyles} />
+
       <Box sx={plateStyles}>{plate}</Box>
+
+      <Box sx={bottomSpacerStyles} />
 
       <Box sx={dockStyles}>
         <Box sx={inputWrapperStyles}>
@@ -98,10 +102,22 @@ const containerStyles = {
   flexDirection: 'column',
   alignItems: 'center',
   width: '100%',
-  gap: { xs: '1rem', md: '5rem' },
-  pb: { xs: '320px', md: '2rem' },
-  pt: { xs: '1rem', md: '2rem' },
+  height: { xs: '100%', md: 'auto' },
+  justifyContent: 'flex-start',
+  pt: { xs: '2rem', md: '4rem' },
+  gap: { xs: 0, md: 5 },
 };
+
+const topSpacerStyles = {
+  flex: 0,
+  '@media (max-width: 600px) and (min-height: 700px)': {
+    height: 'auto',
+    flex: 0.5,
+    maxHeight: '80px',
+  },
+};
+
+const bottomSpacerStyles = { flex: { xs: 1, md: 0 } };
 
 const cursorStyles = {
   display: 'inline-block',
@@ -122,11 +138,15 @@ const plateStyles = {
   width: 'fit-content',
   mx: 'auto',
   fontSize: { xs: '4rem', sm: '5rem' },
+  padding: { xs: '1rem 1.5rem 0.5rem 1.5rem', sm: '1.5rem 2.5rem 0.75rem 2.5rem' },
+  '@media (max-width: 600px) and (min-height: 750px)': {
+    fontSize: '5rem',
+    padding: '1.5rem 2.5rem 0.75rem 2.5rem',
+  },
   fontWeight: '900',
   borderRadius: 4,
   bgcolor: 'primary.main',
   color: 'primary.contrastText',
-  padding: { xs: '1rem 1.5rem 0.5rem 1.5rem', sm: '1.5rem 2.5rem 0.75rem 2.5rem' },
   letterSpacing: '0.5rem',
   display: 'flex',
   alignItems: 'center',
@@ -148,18 +168,21 @@ const plateStyles = {
     right: '8px',
     bottom: '8px',
     border: '3px solid',
+    '@media (max-width: 600px) and (min-height: 750px)': {
+      border: '3px solid',
+      top: '10px',
+      left: '10px',
+      right: '10px',
+      bottom: '10px',
+    },
     borderRadius: 3,
     pointerEvents: 'none',
     boxShadow: `
-    /* All-around base shadow (Spread: 1px) */
-    0px 0px 2px 1px rgba(0, 0, 0, 0.3),
-    /* Inset all-around shadow (Spread: 1px) */
-    inset 0px 0px 2px 1px rgba(0, 0, 0, 0.2),
-    /* Directional highlight (Top-Left) */
-    -1px -1px 1px rgba(255, 255, 255, 0.3),
-    /* Directional inner highlight (Bottom-Right) */
-    inset -1px -1px 1px rgba(255, 255, 255, 0.2)
-  `,
+      0px 0px 2px 1px rgba(0, 0, 0, 0.3),
+      inset 0px 0px 2px 1px rgba(0, 0, 0, 0.2),
+      -1px -1px 1px rgba(255, 255, 255, 0.3),
+      inset -1px -1px 1px rgba(255, 255, 255, 0.2)
+    `,
   },
 };
 
@@ -200,19 +223,15 @@ const feedbackStyles = {
 };
 
 const dockStyles = {
-  position: { xs: 'fixed', md: 'relative' },
+  marginTop: 'auto',
+  position: { xs: 'relative', md: 'relative' },
   bottom: 0,
-  left: 0,
-  right: 0,
-  zIndex: 100,
   width: '100%',
   maxWidth: { xs: '100%', md: '450px' },
-  mx: 'auto',
   pb: {
-    xs: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
-    md: 1,
+    xs: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+    md: 2,
   },
-  pt: 2,
   px: 1,
   display: 'flex',
   flexDirection: 'column',

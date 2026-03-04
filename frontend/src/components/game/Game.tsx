@@ -65,8 +65,8 @@ function Game({ plate, goalPoints, mode }: Props) {
   };
 
   return (
-    <Grid container spacing={2}>
-      <Grid size={{ xs: 12, md: 6 }}>
+    <Grid container spacing={2} sx={{ height: '100%' }}>
+      <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: { md: 'none' }, position: 'relative' }}>
           <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
           <MobileResultDisplay
@@ -75,13 +75,7 @@ function Game({ plate, goalPoints, mode }: Props) {
           ></MobileResultDisplay>
         </Box>
 
-        <Box
-          sx={{
-            position: 'relative',
-            width: '100%',
-            display: isMobileResultsOpen ? { xs: 'none', md: 'block' } : 'block',
-          }}
-        >
+        <Box sx={puzzleDisplayStyles(isMobileResultsOpen)}>
           <PuzzleDisplay
             plate={plate}
             guess={state.guess}
@@ -100,5 +94,14 @@ function Game({ plate, goalPoints, mode }: Props) {
     </Grid>
   );
 }
+
+const puzzleDisplayStyles = (isMobileResultsOpen: boolean) => ({
+  position: 'relative',
+  width: '100%',
+  flex: { xs: 1, md: '0 1 auto' },
+  display: isMobileResultsOpen ? { xs: 'none', md: 'flex' } : 'flex',
+  flexDirection: 'column',
+  mt: { md: 4 },
+});
 
 export default Game;
