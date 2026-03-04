@@ -1,5 +1,5 @@
 import { render, screen, act, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PuzzleDisplay from './PuzzleDisplay';
 
 describe('PuzzleDisplay Component', () => {
@@ -7,93 +7,128 @@ describe('PuzzleDisplay Component', () => {
     plate: 'LPG',
     guess: '',
     isSubmitting: false,
+    feedback: undefined,
+    showFeedback: false,
     onGuessChange: vi.fn(),
     onGuessSubmit: vi.fn(),
   };
 
-  describe('renders', () => {
-    it('renders the text input field', () => {
-      render(<PuzzleDisplay {...defaultProps} />);
-      const input = screen.getByPlaceholderText('Enter a solution');
-      expect(input).toBeInTheDocument();
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  describe('plate', () => {
+  describe('renders', () => {
     it('renders the license plate letters', () => {
       render(<PuzzleDisplay {...defaultProps} />);
       expect(screen.getByText('LPG')).toBeInTheDocument();
     });
+
+    it('renders the virtual keyboard', () => {
+      render(<PuzzleDisplay {...defaultProps} />);
+      // Check for a few keys to ensure Keyboard is present
+      expect(screen.getByText('Q')).toBeInTheDocument();
+      expect(screen.getByText('O')).toBeInTheDocument();
+      expect(screen.getByText('S')).toBeInTheDocument();
+      expect(screen.getByText('L')).toBeInTheDocument();
+      expect(screen.getByText('M')).toBeInTheDocument();
+      expect(screen.getByText('ENTER')).toBeInTheDocument();
+    });
   });
 
   describe('guess', () => {
-    it('displays the current guess value in the input', () => {
-      render(<PuzzleDisplay {...defaultProps} guess="leapfrog" />);
-      const input = screen.getByDisplayValue('leapfrog');
-      expect(input).toBeInTheDocument();
+    it('displays the current guess value', () => {
+      render(<PuzzleDisplay {...defaultProps} guess="LEAPFROG" />);
+      expect(screen.getByText('LEAPFROG')).toBeInTheDocument();
     });
   });
 
   describe('isSubmitting', () => {
-    it('disables the input field when isSubmitting is true', () => {
+    it('does not call callbacks when isSubmitting is true', () => {
       render(<PuzzleDisplay {...defaultProps} isSubmitting={true} />);
-      const input = screen.getByPlaceholderText('Enter a solution');
-      expect(input).toBeDisabled();
+
+      fireEvent.keyDown(window, { key: 'a' });
+      expect(defaultProps.onGuessChange).not.toHaveBeenCalled();
     });
 
-    it('shows the spinner after a delay when isSubmitting becomes true', () => {
-      // Tell Vitest to use fake timers
+    it('shows the spinner after a delay', () => {
       vi.useFakeTimers();
-
       render(<PuzzleDisplay {...defaultProps} isSubmitting={true} />);
-      const spinner = screen.queryByRole('progressbar'); // Assuming the spinner has role="progressbar"
-      expect(spinner).not.toBeInTheDocument(); // Spinner should not be immediately visible
 
-      // Fast-forward time by 300ms to trigger the spinner
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+
       act(() => {
         vi.advanceTimersByTime(300);
       });
 
-      const delayedSpinner = screen.queryByRole('progressbar');
-      expect(delayedSpinner).toBeInTheDocument(); // Spinner should now be visible
-
-      // Restore real timers so other tests aren't affected
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
       vi.useRealTimers();
     });
   });
 
+  describe('feedback', () => {
+    it('shows feedback when showFeedback is true', () => {
+      render(<PuzzleDisplay {...defaultProps} feedback="Valid word!" showFeedback={true} />);
+      expect(screen.getByText('Valid word!')).toBeInTheDocument();
+    });
+
+    it('does not show feedback when showFeedback is false', () => {
+      render(<PuzzleDisplay {...defaultProps} feedback="Valid word!" showFeedback={false} />);
+      // Mui Fade keeps the element in DOM but hidden, or removes it.
+      // Based on typical Fade behavior, we check if it's visible.
+      const feedback = screen.queryByText('Valid word!');
+      if (feedback) {
+        expect(feedback).not.toBeVisible();
+      }
+    });
+  });
+
   describe('onGuessChange', () => {
-    it('calls onGuessChange when the user types', () => {
-      const onGuessChange = vi.fn();
-      render(<PuzzleDisplay {...defaultProps} onGuessChange={onGuessChange} />);
+    describe('virtual keyboard', () => {
+      it('calls onGuessChange when a letter key is clicked', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="ABC" />);
+        const keyQ = screen.getByText('Q');
 
-      const input = screen.getByPlaceholderText('Enter a solution');
-      fireEvent.change(input, { target: { value: 'leapfrog' } });
+        fireEvent.click(keyQ);
+        expect(defaultProps.onGuessChange).toHaveBeenCalledWith('ABCQ');
+      });
 
-      expect(onGuessChange).toHaveBeenCalledWith('leapfrog');
+      it('calls onGuessChange with sliced string when DELETE is clicked', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="WORD" />);
+
+        const deleteKey = screen.getByTestId('keyboard-delete');
+        fireEvent.click(deleteKey);
+
+        expect(defaultProps.onGuessChange).toHaveBeenCalledWith('WOR');
+      });
+    });
+
+    describe('physical keyboard', () => {
+      it('calls onGuessChange when a physical key is pressed', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="A" />);
+        fireEvent.keyDown(window, { key: 'b' });
+        expect(defaultProps.onGuessChange).toHaveBeenCalledWith('AB');
+      });
     });
   });
 
   describe('onGuessSubmit', () => {
-    it('calls onGuessSubmit when Enter key is pressed', () => {
-      const onGuessSubmit = vi.fn();
-      render(<PuzzleDisplay {...defaultProps} onGuessSubmit={onGuessSubmit} />);
+    describe('virtual keyboard', () => {
+      it('calls onGuessSubmit when ENTER key is clicked', () => {
+        render(<PuzzleDisplay {...defaultProps} />);
+        const enterKey = screen.getByText('ENTER');
 
-      const input = screen.getByPlaceholderText('Enter a solution');
-      fireEvent.keyDown(input, { key: 'Enter' });
-
-      expect(onGuessSubmit).toHaveBeenCalledOnce();
+        fireEvent.click(enterKey);
+        expect(defaultProps.onGuessSubmit).toHaveBeenCalled();
+      });
     });
 
-    it('does NOT call onGuessSubmit for non-Enter key presses', () => {
-      const onGuessSubmit = vi.fn();
-      render(<PuzzleDisplay {...defaultProps} onGuessSubmit={onGuessSubmit} />);
+    describe('physical keyboard', () => {
+      it('calls onGuessSubmit when physical Enter is pressed', () => {
+        render(<PuzzleDisplay {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Enter a solution');
-      fireEvent.keyDown(input, { key: 'a' });
-      fireEvent.keyDown(input, { key: 'Backspace' });
-
-      expect(onGuessSubmit).not.toHaveBeenCalled();
+        fireEvent.keyDown(window, { key: 'Enter' });
+        expect(defaultProps.onGuessSubmit).toHaveBeenCalled();
+      });
     });
   });
 });

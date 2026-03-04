@@ -26,11 +26,10 @@ export const theme = createTheme({
 
   components: {
     MuiButton: {
-      defaultProps: {
-        className: 'default-button-class',
-        style: {
+      styleOverrides: {
+        root: {
           borderRadius: '999px',
-          textTransform: 'None',
+          textTransform: 'none',
         },
       },
     },

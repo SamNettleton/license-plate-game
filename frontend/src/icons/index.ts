@@ -6,3 +6,4 @@ export { default as BackIcon } from '@mui/icons-material/ArrowBackIosNew';
 export { default as SuccessIcon } from '@mui/icons-material/CheckCircleOutline';
 export { default as ErrorIcon } from '@mui/icons-material/HighlightOff';
 export { default as RefreshIcon } from '@mui/icons-material/Refresh';
+export { default as DeleteIcon } from '@mui/icons-material/Backspace';
