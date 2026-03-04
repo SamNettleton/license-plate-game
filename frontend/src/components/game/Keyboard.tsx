@@ -23,27 +23,9 @@ export default function Keyboard({ disabled, onChar, onDelete, onEnter }: Keyboa
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        alignItems: 'center',
-        width: '100%',
-        mt: 3,
-      }}
-    >
+    <Box sx={keyboardContainerStyles}>
       {ROWS.map((row, rowIndex) => (
-        <Box
-          key={rowIndex}
-          sx={{
-            display: 'flex',
-            gap: { xs: 0.75, sm: 1 },
-            width: '100%',
-            justifyContent: 'center',
-            px: rowIndex === 1 ? { xs: '5%', sm: '5%' } : 0,
-          }}
-        >
+        <Box key={rowIndex} sx={keyRowStyles(rowIndex)}>
           {row.map((key) => {
             const isSpecial = key === 'ENTER' || key === 'DELETE';
             return (
@@ -64,6 +46,23 @@ export default function Keyboard({ disabled, onChar, onDelete, onEnter }: Keyboa
     </Box>
   );
 }
+
+const keyboardContainerStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 1,
+  alignItems: 'center',
+  width: '100%',
+  mt: 3,
+};
+
+const keyRowStyles = (rowIndex: number) => ({
+  display: 'flex',
+  gap: { xs: 0.75, sm: 1 },
+  width: '100%',
+  justifyContent: 'center',
+  px: rowIndex === 1 ? { xs: '5%', sm: '5%' } : 0,
+});
 
 const keyStyles = (isSpecial: boolean) => ({
   flex: isSpecial ? 1.5 : 1,

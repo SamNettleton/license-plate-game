@@ -54,13 +54,18 @@ describe('PuzzleDisplay Component', () => {
       vi.useFakeTimers();
       render(<PuzzleDisplay {...defaultProps} isSubmitting={true} />);
 
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      // Spinner should not be immediately visible
+      const spinner = screen.queryByRole('progressbar');
+      expect(spinner).not.toBeInTheDocument();
 
+      // Fast-forward time by 300ms to trigger the spinner
       act(() => {
         vi.advanceTimersByTime(300);
       });
 
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      const delayedSpinner = screen.queryByRole('progressbar');
+      expect(delayedSpinner).toBeInTheDocument();
+
       vi.useRealTimers();
     });
   });

@@ -17,7 +17,7 @@ describe('MobileResultDisplay', () => {
     });
 
     it('renders solutions in a single column when 10 or fewer', () => {
-      const mockSolutions = ['apple', 'banana']; // 2 solutions (<= 10)
+      const mockSolutions = ['apple', 'banana'];
       render(<MobileResultDisplay solutions={mockSolutions} onToggle={vi.fn()} />);
 
       const summary = screen.getByRole('button');
