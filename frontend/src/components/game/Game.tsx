@@ -67,12 +67,19 @@ function Game({ plate, goalPoints, mode }: Props) {
   return (
     <Grid container spacing={2} sx={{ height: '100%' }}>
       <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: { md: 'none' }, position: 'relative' }}>
+        <Box
+          sx={{
+            display: { md: 'none' },
+            position: 'relative',
+          }}
+        >
           <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
-          <MobileResultDisplay
-            solutions={state.solutions}
-            onToggle={(isOpen) => setIsMobileResultsOpen(isOpen)}
-          ></MobileResultDisplay>
+          <Box sx={{ position: 'relative', mt: 1 }}>
+            <MobileResultDisplay
+              solutions={state.solutions}
+              onToggle={(isOpen) => setIsMobileResultsOpen(isOpen)}
+            />
+          </Box>
         </Box>
 
         <Box sx={puzzleDisplayStyles(isMobileResultsOpen)}>
