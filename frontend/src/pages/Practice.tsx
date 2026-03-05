@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchRandomPlate } from '../api/plateService';
 import Game from '@/components/game/Game';
 import { GameMode } from '@/constants/game';
-import { Box } from '@components';
+import { Box, Fade } from '@components';
+import LoadingDisplay from '@/components/feedback/LoadingDisplay';
+import ErrorDisplay from '@/components/feedback/ErrorDisplay';
 
 const PLATE_STORAGE_KEY = 'lp_practice_current_plate';
 
@@ -10,7 +12,9 @@ function Practice() {
   const {
     data: challenge,
     isLoading,
+    isFetching,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['randomPlate'],
     queryFn: fetchPlate,
@@ -20,19 +24,21 @@ function Practice() {
     refetchOnReconnect: false,
   });
 
-  if (isLoading) return <div>Spinning up a new plate...</div>;
-  if (error || !challenge) return <div>Error loading game.</div>;
+  if (isLoading || isFetching) return <LoadingDisplay message="Crafting a random plate..." />;
+  if (error || !challenge) return <ErrorDisplay error={error} reset={refetch} />;
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Game
-        key={challenge.sequence}
-        plate={challenge.sequence}
-        solutionsCount={challenge.solutionsCount}
-        goalPoints={challenge.goalPoints}
-        mode={GameMode.PRACTICE}
-      />
-    </Box>
+    <Fade in={true} timeout={1000}>
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Game
+          key={challenge.sequence}
+          plate={challenge.sequence}
+          solutionsCount={challenge.solutionsCount}
+          goalPoints={challenge.goalPoints}
+          mode={GameMode.PRACTICE}
+        />
+      </Box>
+    </Fade>
   );
 }
 
