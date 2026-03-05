@@ -1,13 +1,14 @@
 import { Box, CircularProgress, Fade, Typography } from '@components';
 import * as React from 'react';
 import Keyboard from '@/components/game/Keyboard';
+import FeedbackDisplay from '@/components/game/ResultDisplay/FeedbackDisplay';
+import { GameFeedback } from '@/types/game';
 
 type Props = {
   plate: string;
   guess: string;
   isSubmitting: boolean;
-  feedback: string | undefined;
-  showFeedback: boolean;
+  feedback: GameFeedback | null;
   onGuessChange: (val: string) => void;
   onGuessSubmit: () => void;
 };
@@ -17,7 +18,6 @@ export default function PuzzleDisplay({
   guess,
   isSubmitting,
   feedback,
-  showFeedback,
   onGuessChange,
   onGuessSubmit,
 }: Props) {
@@ -81,9 +81,7 @@ export default function PuzzleDisplay({
             </Box>
           </Fade>
 
-          <Fade in={Boolean(showFeedback && feedback)}>
-            <Box sx={feedbackStyles}>{feedback}</Box>
-          </Fade>
+          <FeedbackDisplay feedback={feedback} />
         </Box>
 
         <Keyboard
@@ -198,28 +196,6 @@ const spinnerStyles = {
   bgcolor: 'rgba(255, 255, 255, 0.7)',
   zIndex: 2,
   borderRadius: 1,
-};
-
-const feedbackStyles = {
-  position: 'absolute',
-  bottom: '100%',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  mb: 2,
-  zIndex: 110,
-  backgroundColor: (theme: any) =>
-    theme.palette.mode === 'light'
-      ? 'grey.900' // High contrast for light mode
-      : 'grey.800', // Lighter than the background for dark mode
-  color: '#fff', // Snackbars usually stay white-on-dark even in dark mode
-  px: 2,
-  py: 0.75,
-  borderRadius: 1,
-  fontSize: '0.875rem',
-  fontWeight: 500,
-  boxShadow: 3,
-  whiteSpace: 'nowrap',
-  marginBottom: '1rem',
 };
 
 const dockStyles = {

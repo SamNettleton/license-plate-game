@@ -1,14 +1,14 @@
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PuzzleDisplay from './PuzzleDisplay';
+import { GameFeedback } from '@/types/game';
 
 describe('PuzzleDisplay Component', () => {
   const defaultProps = {
     plate: 'LPG',
     guess: '',
     isSubmitting: false,
-    feedback: undefined,
-    showFeedback: false,
+    feedback: null as GameFeedback | null,
     onGuessChange: vi.fn(),
     onGuessSubmit: vi.fn(),
   };
@@ -71,19 +71,19 @@ describe('PuzzleDisplay Component', () => {
   });
 
   describe('feedback', () => {
-    it('shows feedback when showFeedback is true', () => {
-      render(<PuzzleDisplay {...defaultProps} feedback="Valid word!" showFeedback={true} />);
-      expect(screen.getByText('Valid word!')).toBeInTheDocument();
+    it('shows feedback when the feedback object is provided', async () => {
+      const successFeedback: GameFeedback = { message: 'Valid word!', type: 'success' };
+      render(<PuzzleDisplay {...defaultProps} feedback={successFeedback} />);
+
+      // findByText is useful here to handle the internal Fade animation of FeedbackDisplay
+      expect(await screen.findByText('Valid word!')).toBeInTheDocument();
     });
 
-    it('does not show feedback when showFeedback is false', () => {
-      render(<PuzzleDisplay {...defaultProps} feedback="Valid word!" showFeedback={false} />);
-      // Mui Fade keeps the element in DOM but hidden, or removes it.
-      // Based on typical Fade behavior, we check if it's visible.
-      const feedback = screen.queryByText('Valid word!');
-      if (feedback) {
-        expect(feedback).not.toBeVisible();
-      }
+    it('does not render feedback when the feedback object is null', () => {
+      render(<PuzzleDisplay {...defaultProps} feedback={null} />);
+
+      const feedbackText = screen.queryByText('Valid word!');
+      expect(feedbackText).not.toBeInTheDocument();
     });
   });
 

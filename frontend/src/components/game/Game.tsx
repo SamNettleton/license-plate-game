@@ -40,7 +40,7 @@ function Game({ plate, goalPoints, mode }: Props) {
     setIsSubmitting(true);
     const lowercaseGuess = state.guess.toLowerCase();
     if (state.solutions.includes(lowercaseGuess)) {
-      dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: 'Already found!' });
+      dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: 'Already found!', feedbackType: 'info' });
       setIsSubmitting(false);
       return;
     }
@@ -55,9 +55,14 @@ function Game({ plate, goalPoints, mode }: Props) {
           mode: mode,
         });
       } else {
-        dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: result.message });
+        dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: result.message, feedbackType: 'info' });
       }
     } catch (err) {
+      dispatch({
+        type: 'SET_FEEDBACK_MESSAGE',
+        message: 'An error occurred while checking your guess.',
+        feedbackType: 'error',
+      });
       console.error(err);
     } finally {
       setIsSubmitting(false);
@@ -87,8 +92,7 @@ function Game({ plate, goalPoints, mode }: Props) {
             plate={plate}
             guess={state.guess}
             isSubmitting={isSubmitting}
-            feedback={state.lastFeedback?.message}
-            showFeedback={showAlert}
+            feedback={showAlert ? state.lastFeedback : null}
             onGuessChange={(val) => dispatch({ type: 'SET_GUESS', payload: val })}
             onGuessSubmit={checkGuess}
           />

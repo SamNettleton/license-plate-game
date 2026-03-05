@@ -1,10 +1,11 @@
 import { GameMode, STORAGE_KEY } from '@/constants/game';
+import { GameFeedback } from '@/types/game';
 
 export type GameState = {
   guess: string;
   solutions: string[];
   points: number;
-  lastFeedback: { message: string; timestamp: number } | null;
+  lastFeedback: GameFeedback | null;
 };
 
 export type GameAction =
@@ -17,7 +18,7 @@ export type GameAction =
       mode: GameMode;
     }
   | { type: 'RESET_GAME' }
-  | { type: 'SET_FEEDBACK_MESSAGE'; message: string };
+  | { type: 'SET_FEEDBACK_MESSAGE'; message: string; feedbackType: 'error' | 'info' };
 
 export const initialState: GameState = {
   guess: '',
@@ -86,7 +87,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         guess: '',
         solutions: updatedSolutions,
         points: updatedPoints,
-        lastFeedback: { message: action.feedback, timestamp: Date.now() },
+        lastFeedback: { message: action.feedback, type: 'success' },
       };
     case 'RESET_GAME':
       return initialState;
@@ -94,7 +95,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         guess: '',
-        lastFeedback: { message: action.message, timestamp: Date.now() },
+        lastFeedback: { message: action.message, type: action.feedbackType },
       };
     default:
       return state;
