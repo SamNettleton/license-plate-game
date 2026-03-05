@@ -127,7 +127,7 @@ describe('gameReducer', () => {
     });
 
     describe('SET_FEEDBACK_MESSAGE', () => {
-      it('SET_FEEDBACK_MESSAGE sets the feedback and clears the guess', () => {
+      it('sets the feedback and clears the guess', () => {
         const state: GameState = { ...initialState, guess: 'badword' };
         const newState = gameReducer(state, {
           type: 'SET_FEEDBACK_MESSAGE',
@@ -138,7 +138,7 @@ describe('gameReducer', () => {
         expect(newState.lastFeedback?.message).toBe('Not in our dictionary!');
       });
 
-      it('SET_FEEDBACK_MESSAGE sets error or info feedback', () => {
+      it('sets error or info feedback', () => {
         const state: GameState = { ...initialState, guess: 'badword' };
 
         // Test Error type
