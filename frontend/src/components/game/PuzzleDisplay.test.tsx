@@ -128,12 +128,68 @@ describe('PuzzleDisplay Component', () => {
     });
 
     describe('physical keyboard', () => {
-      it('calls onGuessSubmit when physical Enter is pressed', () => {
+      it('calls onGuessSubmit when Enter is pressed and NO button is focused', () => {
         render(<PuzzleDisplay {...defaultProps} />);
 
-        fireEvent.keyDown(window, { key: 'Enter' });
+        // Ensure body is focused
+        document.body.focus();
+
+        const event = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
+        vi.spyOn(event, 'preventDefault');
+        window.dispatchEvent(event);
+
         expect(defaultProps.onGuessSubmit).toHaveBeenCalled();
+        expect(event.preventDefault).toHaveBeenCalled();
       });
+
+      it('does NOT call onGuessSubmit or preventDefault when a button IS focused', () => {
+        render(<PuzzleDisplay {...defaultProps} />);
+
+        const button = document.createElement('button');
+        document.body.appendChild(button);
+        button.focus();
+
+        const event = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
+        vi.spyOn(event, 'preventDefault');
+        window.dispatchEvent(event);
+
+        // The game should NOT intercept this Enter key
+        expect(defaultProps.onGuessSubmit).not.toHaveBeenCalled();
+        expect(event.preventDefault).not.toHaveBeenCalled();
+
+        document.body.removeChild(button);
+      });
+    });
+  });
+
+  describe('focus management', () => {
+    it('blurs a focused button when a letter is typed', () => {
+      render(<PuzzleDisplay {...defaultProps} />);
+
+      // Create a dummy button and focus it
+      const button = document.createElement('button');
+      document.body.appendChild(button);
+      button.focus();
+      expect(document.activeElement).toBe(button);
+
+      fireEvent.keyDown(window, { key: 'a' });
+
+      // Focus should have been dropped (back to document.body)
+      expect(document.activeElement).not.toBe(button);
+      document.body.removeChild(button);
+    });
+
+    it('blurs a focused button when backspace is pressed', () => {
+      render(<PuzzleDisplay {...defaultProps} />);
+
+      const button = document.createElement('button');
+      document.body.appendChild(button);
+      button.focus();
+
+      fireEvent.keyDown(window, { key: 'Backspace' });
+
+      expect(document.activeElement).not.toBe(button);
+      document.body.removeChild(button);
     });
   });
 });
