@@ -56,7 +56,7 @@ const accordionStyles = (isExpanded: boolean) => ({
 
   ...(isExpanded && {
     position: 'absolute',
-    top: '40px',
+    top: '100%',
     left: '5%',
     width: '90%',
     height: 'calc(100vh - 150px)',
