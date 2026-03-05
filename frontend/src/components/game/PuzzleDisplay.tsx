@@ -36,11 +36,33 @@ export default function PuzzleDisplay({
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isSubmitting) return;
-      if (e.key === 'Enter') {
-        onGuessSubmit();
-      } else if (e.key === 'Backspace') {
+
+      const isLetter = e.key.length === 1 && e.key.match(/[a-z]/i);
+      const isBackspace = e.key === 'Backspace';
+      const isEnter = e.key === 'Enter';
+
+      // Unfocus any focused element (like TextField) when typing outside,
+      // to prevent double input issues.
+      // Only do this for relevant keys to avoid disrupting other interactions
+      // (e.g. arrow keys, tab).
+      if (isLetter || isBackspace) {
+        if (
+          document.activeElement instanceof HTMLElement &&
+          document.activeElement !== document.body
+        ) {
+          document.activeElement.blur();
+        }
+      }
+      if (isEnter) {
+        const isFocusedOnButton = document.activeElement?.tagName === 'BUTTON';
+
+        if (!isFocusedOnButton) {
+          e.preventDefault();
+          onGuessSubmit();
+        }
+      } else if (isBackspace) {
         onGuessChange(guess.slice(0, -1));
-      } else if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
+      } else if (isLetter) {
         onGuessChange(guess + e.key.toUpperCase());
       }
     };
