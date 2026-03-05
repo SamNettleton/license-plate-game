@@ -5,16 +5,18 @@ import { GameMode } from '@/constants/game';
 import { Box } from '@components';
 
 function Daily() {
+  const today = new Date().toISOString().split('T')[0];
+
   const {
     data: challenge,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['dailyPlate'],
+    queryKey: ['dailyPlate', today],
     queryFn: fetchDailyPlate,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnReconnect: true,
   });
 
   if (isLoading) return <div>Spinning up a new plate...</div>;
