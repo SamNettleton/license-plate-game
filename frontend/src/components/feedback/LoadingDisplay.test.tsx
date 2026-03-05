@@ -20,7 +20,7 @@ describe('LoadingDisplay Component', () => {
     });
 
     it('renders a custom loading message', () => {
-      const customMessage = 'Baking a fresh plate...';
+      const customMessage = 'Crafting a fresh plate...';
       render(<LoadingDisplay message={customMessage} />);
 
       expect(screen.getByText(customMessage)).toBeInTheDocument();

@@ -7,16 +7,7 @@ type Props = {
 
 export default function ErrorDisplay({ error, reset }: Props) {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        gap: 2,
-      }}
-    >
+    <Box sx={errorContainerStyles}>
       <Typography>{error?.message || 'Something went wrong'}</Typography>
       {reset && (
         <Button variant="contained" onClick={reset}>
@@ -26,3 +17,12 @@ export default function ErrorDisplay({ error, reset }: Props) {
     </Box>
   );
 }
+
+const errorContainerStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '100%',
+  gap: 2,
+};

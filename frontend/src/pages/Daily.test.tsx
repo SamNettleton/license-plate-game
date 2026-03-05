@@ -17,7 +17,7 @@ const createTestQueryClient = () =>
     },
   });
 
-describe('Daily Component', () => {
+describe('Daily Page', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {

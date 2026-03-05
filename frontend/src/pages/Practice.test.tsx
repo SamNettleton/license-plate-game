@@ -16,7 +16,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 );
 
-describe('Practice', () => {
+describe('Practice Page', () => {
   beforeEach(() => {
     localStorage.clear();
     queryClient.clear();
