@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Fade, Typography } from '@components';
+import { Box, Typography } from '@components';
 import * as React from 'react';
 import Keyboard from '@/components/game/Keyboard';
 import FeedbackDisplay from '@/components/game/ResultDisplay/FeedbackDisplay';
@@ -97,13 +97,7 @@ export default function PuzzleDisplay({
             <Box component="span" sx={cursorStyles} />
           </Typography>
 
-          <Fade in={showSpinner}>
-            <Box sx={spinnerStyles}>
-              <CircularProgress size={24} />
-            </Box>
-          </Fade>
-
-          <FeedbackDisplay feedback={feedback} />
+          <FeedbackDisplay feedback={feedback} showSpinner={showSpinner} />
         </Box>
 
         <Keyboard
@@ -204,20 +198,6 @@ const plateStyles = {
       inset -1px -1px 1px rgba(255, 255, 255, 0.2)
     `,
   },
-};
-
-const spinnerStyles = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  bgcolor: 'rgba(255, 255, 255, 0.7)',
-  zIndex: 2,
-  borderRadius: 1,
 };
 
 const dockStyles = {
