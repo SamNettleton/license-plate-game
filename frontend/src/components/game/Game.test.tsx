@@ -101,7 +101,7 @@ describe('Game Component', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+        <Game plate="FAL" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
       </QueryClientProvider>,
     );
 

@@ -25,6 +25,7 @@ function Game({ plate, goalPoints, mode }: Props) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
 
+  // Store active daily results for use in Header.tsx when sharing results.
   React.useEffect(() => {
     if (mode === GameMode.DAILY) {
       queryClient.setQueryData(['active-game-results'], {
