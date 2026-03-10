@@ -28,6 +28,12 @@ describe('Header Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    vi.stubGlobal('navigator', {
+      clipboard: {
+        writeText: vi.fn().mockImplementation(() => Promise.resolve()),
+      },
+    });
+
     (useColorScheme as any).mockReturnValue({
       mode: 'dark',
       setMode: mockSetMode,
@@ -141,6 +147,77 @@ describe('Header Component', () => {
     });
   });
 
+  describe('Share Button', () => {
+    it('does not render on the homepage', () => {
+      renderHeader('/');
+      expect(screen.queryByLabelText('share results')).not.toBeInTheDocument();
+    });
+
+    it('renders on the daily page', () => {
+      renderHeader('/daily');
+      expect(screen.getByLabelText('share results')).toBeInTheDocument();
+    });
+
+    it('copies formatted results to clipboard when clicked', async () => {
+      const testData = {
+        points: 100,
+        goalPoints: 100,
+        plate: 'ABC',
+      };
+      queryClient.setQueryData(['active-game-results'], testData);
+
+      renderHeader('/daily');
+
+      const shareBtn = screen.getByLabelText('share results');
+      fireEvent.click(shareBtn);
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalled();
+
+      const copiedText = vi.mocked(navigator.clipboard.writeText).mock.calls[0][0];
+      expect(copiedText).toContain('100 pts');
+      expect(copiedText).toContain('Full Throttle');
+    });
+
+    it('shows a toast notification after successful copy', async () => {
+      queryClient.setQueryData(['active-game-results'], {
+        points: 50,
+        goalPoints: 100,
+        plate: 'XYZ',
+      });
+
+      renderHeader('/daily');
+
+      fireEvent.click(screen.getByLabelText('share results'));
+
+      expect(
+        await screen.findByText(/Results copied to clipboard/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Tutorial Modal', () => {
+    it('does not render the tutorial modal by default', () => {
+      renderHeader('/');
+      expect(
+        screen.queryByText(/Find words that contain the three letters shown/i),
+      ).not.toBeInTheDocument();
+    });
+
+    it('opens the tutorial modal when clicking the help icon', () => {
+      renderHeader('/');
+
+      const helpBtn = screen.getByLabelText('how to play');
+      fireEvent.click(helpBtn);
+
+      expect(
+        screen.getByText(/Find words that contain the three letters shown/i),
+      ).toBeInTheDocument();
+
+      const closeBtn = screen.getByText('Got it!');
+      fireEvent.click(closeBtn);
+    });
+  });
+
   describe('Theme Toggle', () => {
     it('renders the theme toggle button', () => {
       renderHeader('/');
@@ -181,29 +258,6 @@ describe('Header Component', () => {
       const themeToggleBtn = screen.getByLabelText('toggle theme');
       fireEvent.click(themeToggleBtn);
       expect(mockSetMode).toHaveBeenCalledWith('dark');
-    });
-  });
-
-  describe('Tutorial Modal', () => {
-    it('does not render the tutorial modal by default', () => {
-      renderHeader('/');
-      expect(
-        screen.queryByText(/Find words that contain the three letters shown/i),
-      ).not.toBeInTheDocument();
-    });
-
-    it('opens the tutorial modal when clicking the help icon', () => {
-      renderHeader('/');
-
-      const helpBtn = screen.getByLabelText('how to play');
-      fireEvent.click(helpBtn);
-
-      expect(
-        screen.getByText(/Find words that contain the three letters shown/i),
-      ).toBeInTheDocument();
-
-      const closeBtn = screen.getByText('Got it!');
-      fireEvent.click(closeBtn);
     });
   });
 });

@@ -7,6 +7,7 @@ import ResultBar from './ResultDisplay/ResultBar';
 import { Box, Grid } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
 import { GameMode } from '@/constants/game';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Props = {
   plate: string;
@@ -16,6 +17,7 @@ type Props = {
 };
 
 function Game({ plate, goalPoints, mode }: Props) {
+  const queryClient = useQueryClient();
   const [state, dispatch] = React.useReducer(gameReducer, { mode }, () => createInitialState(mode));
 
   // Alert handling for displaying guess results
@@ -23,11 +25,25 @@ function Game({ plate, goalPoints, mode }: Props) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
 
+  // Store active daily results for use in Header.tsx when sharing results.
+  React.useEffect(() => {
+    if (mode === GameMode.DAILY) {
+      queryClient.setQueryData(['active-game-results'], {
+        points: state.points,
+        goalPoints,
+        plate,
+      });
+    }
+
+    // Cleanup: When the Game component unmounts
+    return () => {
+      queryClient.removeQueries({ queryKey: ['active-game-results'] });
+    };
+  }, [state.points, goalPoints, plate]);
+
   React.useEffect(() => {
     if (!state.lastFeedback) return;
-    // Show the alert immediately
     setShowAlert(true);
-    // Schedule the hide
     const timer = setTimeout(() => {
       setShowAlert(false);
     }, 2000);
