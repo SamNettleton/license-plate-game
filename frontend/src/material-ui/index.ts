@@ -30,5 +30,6 @@ export { default as Tooltip } from '@mui/material/Tooltip';
 export { default as DialogContentText } from '@mui/material/DialogContentText';
 export { default as CircularProgress } from '@mui/material/CircularProgress';
 export { default as InputAdornment } from '@mui/material/InputAdornment';
+export { default as Snackbar } from '@mui/material/Snackbar';
 export { useTheme as useTheme } from '@mui/material';
 export type { SupportedColorScheme as Mode } from '@mui/material/styles';
