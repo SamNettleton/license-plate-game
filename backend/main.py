@@ -22,6 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(plate.router, prefix="/api")
+app.include_router(words.router, prefix="/api")
+app.include_router(system.router, prefix="/api")
+
 # unmask_url=True ensures that /api/plate/ABC and /api/plate/XYZ 
 # are grouped together in metrics rather than creating thousands of separate entries.
 instrumentator = Instrumentator(
@@ -34,7 +38,3 @@ instrumentator = Instrumentator(
 )
 
 instrumentator.instrument(app).expose(app, endpoint="/metrics")
-
-app.include_router(plate.router, prefix="/api")
-app.include_router(words.router, prefix="/api")
-app.include_router(system.router, prefix="/api")
