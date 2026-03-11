@@ -24,6 +24,9 @@ jobs:
 
   test-backend:
     name: Backend Tests (pytest)
+    env:
+      DATABASE_URL: sqlite:///./test.db # default value for testing to satisfy postgres dependency
+      ENABLE_METRICS: 'false'
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.backend == 'true'
