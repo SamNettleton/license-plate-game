@@ -1,19 +1,19 @@
 from wordfreq import top_n_list
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 # Load these ONCE at the module level
 # This list is used to generate "goal" words whereas database is used to validate all words
 COMMON_WORDS_10K = set(top_n_list('en', 10000))
 
-def validate_word(db: Session, word: str) -> bool:
+async def validate_word(db: AsyncSession, word: str) -> bool:
     """
     Checks the PostgreSQL dictionary table for the existence of a word
     """
     # Using 'EXISTS' is the most performant way to check for membership
     query = text("SELECT EXISTS(SELECT 1 FROM dictionary WHERE word = :w)")
-    result = db.execute(query, {"w": word}).scalar()
-    return result
+    result = await db.execute(query, {"w": word})
+    return result.scalar()
 
 def find_matches_for_sequence(sequence: str) -> list[str]:
     """

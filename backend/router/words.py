@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from database import get_db
 from schemas.words import WordCheckRequest, WordCheckResponse
 from services import dictionary
 from logic import game
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/words", tags=["words"])
 
 @router.post("/check", response_model=WordCheckResponse)
-async def check_word(payload: WordCheckRequest, db: Session = Depends(get_db)):
+async def check_word(payload: WordCheckRequest, db: AsyncSession = Depends(get_db)):
     word = payload.word.strip().lower()
     seq = payload.sequence.strip().lower()
 
@@ -20,7 +20,8 @@ async def check_word(payload: WordCheckRequest, db: Session = Depends(get_db)):
         }
     
     # 2. Is it a real word in our dictionary?
-    if not dictionary.validate_word(db, word):
+    is_valid_word = await dictionary.validate_word(db, word)
+    if not is_valid_word:
         return {
             "is_valid": False, 
             "message": "That's not in our dictionary!"
