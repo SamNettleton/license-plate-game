@@ -10,9 +10,6 @@ from router import system
 
 load_dotenv()
 
-import os
-print(f"DEBUG: ENABLE_METRICS is '{os.getenv('ENABLE_METRICS')}'")
-
 app = FastAPI()
 
 # IMPORTANT: Allow your React dev server to talk to this API
