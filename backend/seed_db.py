@@ -1,23 +1,24 @@
+import asyncio
 import json
 import time
-from sqlalchemy import create_engine, text
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import text
 from config import settings
 
 # 1. Setup Connection
-engine = create_engine(settings.database_url)
+engine = create_async_engine(settings.database_url)
 
-def seed_dictionary():
+async def seed_dictionary():
     print("🚀 Starting database seeding...")
     
     # 2. Create the Table
     # We use raw SQL here to ensure the schema is exactly what we want
-    with engine.connect() as conn:
-        conn.execute(text("""
+    async with engine.begin() as conn:
+        await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS dictionary (
                 word TEXT PRIMARY KEY
             );
         """))
-        conn.commit()
         print("✅ Table 'dictionary' is ready.")
 
     # 3. Load and Parse JSON
@@ -38,7 +39,7 @@ def seed_dictionary():
     chunk_size = 10000
     start_time = time.time()
 
-    with engine.connect() as conn:
+    async with engine.begin() as conn:
         for i in range(0, total_words, chunk_size):
             batch = all_words[i : i + chunk_size]
             
@@ -53,8 +54,7 @@ def seed_dictionary():
                 ON CONFLICT (word) DO NOTHING
             """)
             
-            conn.execute(stmt, values)
-            conn.commit()
+            await conn.execute(stmt, values)
             
             print(f"  Inserted {min(i + chunk_size, total_words)} / {total_words}...")
 
@@ -62,4 +62,4 @@ def seed_dictionary():
     print(f"🏁 Finished! Successfully seeded {total_words} words in {end_time - start_time:.2f} seconds.")
 
 if __name__ == "__main__":
-    seed_dictionary()
+    asyncio.run(seed_dictionary())

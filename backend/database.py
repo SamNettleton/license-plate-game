@@ -1,18 +1,23 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import declarative_base
 from config import settings
 
-# Connect to the DB using the URL from our .env
-engine = create_engine(settings.database_url)
+engine = create_async_engine(
+    settings.database_url,
+    pool_size=10,         
+    max_overflow=20,      
+    pool_timeout=30,      
+    pool_pre_ping=True    
+)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
 Base = declarative_base()
 
 # This is a "Dependency" used in FastAPI routes
-def get_db():
-    db = SessionLocal()
+async def get_db():
+    db = AsyncSessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        await db.close()

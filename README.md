@@ -22,6 +22,6 @@ Longer words earn more points. Reach the goal to win the daily challenge!
 ### Backend Frameworks & Libraries
 - **Language:** Python
 - **Core Framework:** FastAPI
-- **Database / ORM:** SQLAlchemy (PostgreSQL via psycopg2)
+- **Database / ORM:** SQLAlchemy (PostgreSQL via asyncpg)
 - **ASGI Server:** Uvicorn
 - **Data Validation:** Pydantic

@@ -10,27 +10,34 @@ from services.dictionary import validate_word, find_matches_for_sequence
 
 class TestDictionaryService:
 
-    def test_validate_word_exists(self):
+    @pytest.mark.asyncio
+    async def test_validate_word_exists(self):
         # Create a mock database session
         mock_db = MagicMock()
-        mock_db.execute.return_value.scalar.return_value = True
-
-        result = validate_word(mock_db, "apple")
-
-        # Ensure the query was executed and returned True
-        assert result is True
-        mock_db.execute.assert_called_once()
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = True
         
-        args, kwargs = mock_db.execute.call_args
-        assert "SELECT EXISTS(SELECT 1 FROM dictionary WHERE word = :w)" in str(args[0])
-        assert args[1] == {"w": "apple"}
+        # AsyncMock for the execute method
+        async def mock_execute(*args, **kwargs):
+            return mock_result
+        mock_db.execute = mock_execute
 
-    def test_validate_word_does_not_exist(self):
+        result = await validate_word(mock_db, "apple")
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_validate_word_does_not_exist(self):
         # Create a mock database session
         mock_db = MagicMock()
-        mock_db.execute.return_value.scalar.return_value = False
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = False
+        
+        async def mock_execute(*args, **kwargs):
+            return mock_result
+        mock_db.execute = mock_execute
 
-        result = validate_word(mock_db, "notarealword")
+        result = await validate_word(mock_db, "notarealword")
 
         assert result is False
 

@@ -10,7 +10,7 @@ from database import get_db
 client = TestClient(app)
 
 # Helper function to override the database dependency
-def override_get_db():
+async def override_get_db():
     class MockDb:
         def execute(self, *args, **kwargs):
             return True
@@ -22,8 +22,8 @@ app.dependency_overrides[get_db] = override_get_db
 def test_check_word_valid(monkeypatch):
     import services.dictionary as dictionary
     
-    # Mock dictionary valid check 
-    monkeypatch.setattr(dictionary, "validate_word", lambda db, word: True)
+    async def mock_validate_word(db, word): return True
+    monkeypatch.setattr(dictionary, "validate_word", mock_validate_word)
     
     payload = {
         "word": "leapfrog",
@@ -57,8 +57,8 @@ def test_check_word_invalid_sequence():
 def test_check_word_invalid_dictionary_word(monkeypatch):
     import services.dictionary as dictionary
     
-    # Mock dictionary returning False for fake word check
-    monkeypatch.setattr(dictionary, "validate_word", lambda db, word: False)
+    async def mock_validate_word(db, word): return False
+    monkeypatch.setattr(dictionary, "validate_word", mock_validate_word)
     
     payload = {
         "word": "alpoog",
