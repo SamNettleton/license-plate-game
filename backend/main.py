@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
+from app.metrics import GUESSES_COUNTER, DB_QUERY_TIME # Ensure these are initialized
+from dotenv import load_dotenv
 
 from router import plate
 from router import words
 from router import system
+
+load_dotenv()
 
 app = FastAPI()
 

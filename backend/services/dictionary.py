@@ -1,11 +1,13 @@
 from wordfreq import top_n_list
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from app.metrics import DB_QUERY_TIME
 
 # Load these ONCE at the module level
 # This list is used to generate "goal" words whereas database is used to validate all words
 COMMON_WORDS_10K = set(top_n_list('en', 10000))
 
+@DB_QUERY_TIME.labels(query_type="validate_word").time()
 async def validate_word(db: AsyncSession, word: str) -> bool:
     """
     Checks the PostgreSQL dictionary table for the existence of a word
