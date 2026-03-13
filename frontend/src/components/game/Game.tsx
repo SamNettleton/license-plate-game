@@ -8,6 +8,7 @@ import { Box, Grid } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
 import { GameMode } from '@/constants/game';
 import { useQueryClient } from '@tanstack/react-query';
+import { faro } from '@/App';
 
 type Props = {
   plate: string;
@@ -74,12 +75,24 @@ function Game({ plate, goalPoints, mode }: Props) {
         dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: result.message, feedbackType: 'info' });
       }
     } catch (err) {
+      if (err instanceof Error) {
+        faro.api.pushError(err, {
+          type: 'guess_verification_failure',
+          context: {
+            guess: state.guess.toLowerCase(),
+            plate: plate,
+            message: 'User saw the "An error occurred" feedback',
+          },
+        });
+      } else {
+        faro.api.pushLog([`Non-standard error occurred: ${String(err)}`]);
+      }
+
       dispatch({
         type: 'SET_FEEDBACK_MESSAGE',
         message: 'An error occurred while checking your guess.',
         feedbackType: 'error',
       });
-      console.error(err);
     } finally {
       setIsSubmitting(false);
     }

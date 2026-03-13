@@ -44,3 +44,5 @@ jobs:
           # Passing the build arg for the frontend specifically
           build-args: |
             VITE_API_URL=https://api.licenseplate.radrabbit.xyz/api
+            VITE_FARO_URL=https://api.licenseplate.radrabbit.xyz/faro/collect
+            VITE_ENVIRONMENT=production
