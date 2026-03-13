@@ -3,12 +3,27 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Box, ThemeProvider, useColorScheme, CssBaseline } from '@components';
 import { theme } from './material-ui/Theme';
+import { initializeFaro, getWebInstrumentations } from '@grafana/faro-web-sdk';
 
 import Home from '@/pages/Home';
 import About from '@/pages/About';
 import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
 import Header from './components/Header';
+
+export const faro = initializeFaro({
+  url: import.meta.env.VITE_FARO_URL || '',
+  app: {
+    name: 'license-plate-frontend',
+    version: '1.0.0',
+    environment: import.meta.env.VITE_ENVIRONMENT || 'development',
+  },
+  instrumentations: [
+    ...getWebInstrumentations({
+      captureConsole: true,
+    }),
+  ],
+});
 
 function App() {
   const queryClient = new QueryClient();
