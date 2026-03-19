@@ -91,7 +91,7 @@ const summaryStyles = {
 
 const summaryTextStyle = {
   fontSize: { xs: '0.9rem', sm: '1rem' },
-  // Targeted override for very short screens
+  // Short Screen Optimization
   '@media (max-height: 600px)': { fontSize: '0.85rem' },
 };
 

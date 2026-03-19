@@ -154,8 +154,8 @@ const cursorStyles = {
 
   // Short Screen Optimization
   '@media (max-height: 600px)': {
-    height: '1.5rem', // Matches the 1.5rem Guess Typography font size
-    width: '1.5px', // Slightly thinner to look proportional to smaller text
+    height: '1.5rem',
+    width: '1.5px',
   },
 };
 
@@ -164,12 +164,12 @@ const plateStyles = {
   width: 'fit-content',
   mx: 'auto',
   // Default sizes
-  fontSize: { xs: '3.5rem', sm: '5rem' }, // Dropped xs from 4rem to 3.5rem
+  fontSize: { xs: '3.5rem', sm: '5rem' },
   padding: { xs: '0.75rem 1.25rem', sm: '1.5rem 2.5rem 0.75rem 2.5rem' },
 
   // Short Screen Optimization
   '@media (max-height: 600px)': {
-    fontSize: '2.5rem', // Significantly smaller for short screens
+    fontSize: '2.5rem',
     padding: '0.7rem 1.25rem 0.25rem 1.25rem',
     letterSpacing: '0.2rem',
     borderRadius: 2,
@@ -196,6 +196,7 @@ const plateStyles = {
     inset 0px 0px 0px 1px rgba(255, 255, 255, 0.1)
   `,
 
+  // "Inner Stripe" overlay
   '&::after': {
     content: '""',
     position: 'absolute',
