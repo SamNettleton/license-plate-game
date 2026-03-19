@@ -71,7 +71,7 @@ export default function Header() {
         onClose={() => setConfirmOpen(false)}
       />
 
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
+      <Toolbar sx={toolbarStyles}>
         <Box sx={{ minWidth: 48, gap: 1, display: 'flex' }}>
           {!isHomePage && (
             <Tooltip title="Back to home">
@@ -80,6 +80,7 @@ export default function Header() {
                 color="inherit"
                 onClick={() => navigate('/')}
                 aria-label="back to home"
+                sx={iconButtonStyles}
               >
                 <BackIcon sx={{ fontSize: '1.2rem' }} />
               </IconButton>
@@ -92,6 +93,7 @@ export default function Header() {
                 color="inherit"
                 onClick={handleRandomizeClick}
                 aria-label="randomize plate"
+                sx={iconButtonStyles}
               >
                 <RefreshIcon sx={{ fontSize: '1.5rem' }} />
               </IconButton>
@@ -99,29 +101,29 @@ export default function Header() {
           )}
         </Box>
 
-        <Box
-          sx={{
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1,
-            display: 'flex',
-          }}
-        >
-          {isHomePage && <Logo />}
-        </Box>
+        <Box sx={logoStyles}>{isHomePage && <Logo />}</Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {isDailyPage && (
             <Tooltip title="Share results">
-              <IconButton color="inherit" onClick={handleShare} aria-label="share results">
+              <IconButton
+                color="inherit"
+                onClick={handleShare}
+                aria-label="share results"
+                sx={iconButtonStyles}
+              >
                 <ShareIcon sx={{ fontSize: '1.2rem' }} />
               </IconButton>
             </Tooltip>
           )}
 
           <Tooltip title="How to play">
-            <IconButton color="inherit" onClick={() => setModalOpen(true)} aria-label="how to play">
+            <IconButton
+              color="inherit"
+              onClick={() => setModalOpen(true)}
+              aria-label="how to play"
+              sx={iconButtonStyles}
+            >
               <HelpIcon />
             </IconButton>
           </Tooltip>
@@ -131,6 +133,7 @@ export default function Header() {
               onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
               color="inherit"
               aria-label="toggle theme"
+              sx={iconButtonStyles}
             >
               {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
             </IconButton>
@@ -183,4 +186,36 @@ const formatGameStatsForSharing = (gameStats: any) => {
     '',
     window.location.origin,
   ].join('\n');
+};
+
+const toolbarStyles = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  position: 'relative',
+  minHeight: { xs: '48px', sm: '64px' },
+  '@media (max-height: 600px)': {
+    minHeight: '40px',
+    px: 1,
+  },
+};
+
+const iconButtonStyles = {
+  '@media (max-height: 600px)': {
+    padding: '4px',
+    '& .MuiSvgIcon-root': {
+      fontSize: '1.2rem',
+    },
+  },
+};
+
+const logoStyles = {
+  position: 'absolute',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 1,
+  display: 'flex',
+
+  '@media (max-height: 600px), (max-width: 360px)': {
+    transform: 'translateX(-50%) scale(0.8)',
+  },
 };

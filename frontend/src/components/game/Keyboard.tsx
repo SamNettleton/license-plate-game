@@ -54,6 +54,12 @@ const keyboardContainerStyles = {
   alignItems: 'center',
   width: '100%',
   mt: 3,
+
+  // Short Screen Optimization
+  '@media (max-height: 600px)': {
+    mt: 0,
+    gap: 0.75,
+  },
 };
 
 const keyRowStyles = (rowIndex: number) => ({
@@ -67,11 +73,20 @@ const keyRowStyles = (rowIndex: number) => ({
 const keyStyles = (isSpecial: boolean) => ({
   flex: isSpecial ? 1.5 : 1,
   minWidth: 0,
-  height: { xs: '48px', sm: '58px' },
+  height: { xs: '45px', sm: '58px' },
+
+  // Short Screen Optimization
+  '@media (max-height: 600px)': {
+    height: '38px',
+    fontSize: isSpecial ? '0.5rem' : '1rem',
+    borderRadius: '3px !important',
+  },
+
   '@media (max-width: 600px) and (min-height: 700px)': {
     height: '58px',
     fontSize: isSpecial ? '0.8rem' : '1.25rem',
   },
+
   p: 0,
   borderRadius: '4px !important',
   fontSize: isSpecial ? '0.7rem' : '1.1rem',

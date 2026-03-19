@@ -120,6 +120,12 @@ const containerStyles = {
   justifyContent: 'flex-start',
   pt: { xs: '2rem', md: '4rem' },
   gap: { xs: 0, md: 5 },
+
+  // Short Screen Optimization
+  '@media (max-height: 600px)': {
+    pt: '0.5rem',
+    gap: '0.5rem',
+  },
 };
 
 const topSpacerStyles = {
@@ -145,18 +151,35 @@ const cursorStyles = {
     '0%, 100%': { opacity: 1 },
     '50%': { opacity: 0 },
   },
+
+  // Short Screen Optimization
+  '@media (max-height: 600px)': {
+    height: '1.5rem',
+    width: '1.5px',
+  },
 };
 
 const plateStyles = {
   position: 'relative',
   width: 'fit-content',
   mx: 'auto',
-  fontSize: { xs: '4rem', sm: '5rem' },
-  padding: { xs: '1rem 1.5rem 0.5rem 1.5rem', sm: '1.5rem 2.5rem 0.75rem 2.5rem' },
+  // Default sizes
+  fontSize: { xs: '3.5rem', sm: '5rem' },
+  padding: { xs: '0.75rem 1.25rem', sm: '1.5rem 2.5rem 0.75rem 2.5rem' },
+
+  // Short Screen Optimization
+  '@media (max-height: 600px)': {
+    fontSize: '2.5rem',
+    padding: '0.7rem 1.25rem 0.25rem 1.25rem',
+    letterSpacing: '0.2rem',
+    borderRadius: 2,
+  },
+
   '@media (max-width: 600px) and (min-height: 750px)': {
     fontSize: '5rem',
     padding: '1.5rem 2.5rem 0.75rem 2.5rem',
   },
+
   fontWeight: '900',
   borderRadius: 4,
   bgcolor: 'primary.main',
@@ -182,12 +205,21 @@ const plateStyles = {
     right: '8px',
     bottom: '8px',
     border: '3px solid',
+    '@media (max-height: 600px)': {
+      top: '4px',
+      left: '4px',
+      right: '4px',
+      bottom: '4px',
+      border: '2px solid',
+      borderRadius: 1,
+    },
     '@media (max-width: 600px) and (min-height: 750px)': {
       border: '3px solid',
       top: '10px',
       left: '10px',
       right: '10px',
       bottom: '10px',
+      borderRadius: 3,
     },
     borderRadius: 3,
     pointerEvents: 'none',
@@ -231,4 +263,11 @@ const guessTypographyStyles = {
   display: 'flex',
   alignItems: 'bottom',
   fontSize: '2rem',
+
+  // Short Screen Optimization
+  '@media (max-height: 600px)': {
+    fontSize: '1.5rem',
+    minHeight: '2rem',
+    letterSpacing: 1,
+  },
 };

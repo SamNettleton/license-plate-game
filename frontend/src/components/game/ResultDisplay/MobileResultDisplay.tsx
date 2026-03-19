@@ -29,7 +29,9 @@ export default function MobileResultDisplay({ solutions, onToggle }: Props) {
   return (
     <Accordion expanded={isExpanded} onChange={handleChange} sx={accordionStyles(isExpanded)}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={summaryStyles}>
-        <Typography noWrap>{summaryText()}</Typography>
+        <Typography noWrap sx={summaryTextStyle}>
+          {summaryText()}
+        </Typography>
       </AccordionSummary>
       <AccordionDetails role="region" aria-label="Found solutions" sx={detailsStyles(columnCount)}>
         {solutions.map((solution, index) => (
@@ -72,6 +74,10 @@ const detailsStyles = (columnCount: string) => ({
   pb: 2,
   maxHeight: 'calc(100vh - 220px)',
   transition: 'grid-template-columns 0.3s ease',
+
+  '@media (max-height: 600px), (max-width: 350px)': {
+    fontSize: '0.85rem',
+  },
 });
 
 const summaryStyles = {
@@ -83,9 +89,27 @@ const summaryStyles = {
   },
 };
 
+const summaryTextStyle = {
+  fontSize: { xs: '0.9rem', sm: '1rem' },
+  // Short Screen Optimization
+  '@media (max-height: 600px)': { fontSize: '0.85rem' },
+};
+
 const solutionStyles = {
   borderBottom: '1px solid',
   borderColor: 'divider',
-  minWidth: '140px',
-  width: 'fit-content',
+  width: '100%',
+
+  minWidth: {
+    xs: '120px',
+    sm: '140px',
+  },
+
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+
+  '@media (max-height: 600px)': {
+    minWidth: '100px',
+  },
 };

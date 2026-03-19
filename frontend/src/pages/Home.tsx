@@ -27,22 +27,10 @@ function Home() {
       </Typography>
 
       <Stack spacing={2} sx={{ width: '80%', maxWidth: '300px' }}>
-        <Button
-          variant="contained"
-          size="large"
-          fullWidth
-          onClick={dailyPage}
-          sx={{ py: 1.5, fontSize: '1.1rem' }}
-        >
+        <Button variant="contained" size="large" fullWidth onClick={dailyPage} sx={buttonStyles}>
           Daily Challenge
         </Button>
-        <Button
-          variant="outlined"
-          size="large"
-          fullWidth
-          onClick={practicePage}
-          sx={{ py: 1.5, fontSize: '1.1rem' }}
-        >
+        <Button variant="outlined" size="large" fullWidth onClick={practicePage} sx={buttonStyles}>
           Practice
         </Button>
       </Stack>
@@ -68,4 +56,20 @@ const gameTitleTypography = {
   textAlign: 'center',
   mb: 4,
   color: 'primary.main',
+  fontSize: { xs: '2.5rem', sm: '3rem' },
+
+  '@media (max-height: 520px)': {
+    fontSize: '1.8rem',
+    mb: 3,
+  },
+};
+
+const buttonStyles = {
+  py: 1.5,
+  fontSize: '1.1rem',
+
+  '@media (max-height: 520px)': {
+    py: 1,
+    fontSize: '0.9rem',
+  },
 };
