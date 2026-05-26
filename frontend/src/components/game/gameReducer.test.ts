@@ -111,6 +111,50 @@ describe('gameReducer', () => {
           type: 'success',
         });
       });
+
+      it('with multiple words accumulates points correctly and alphabetizes them', () => {
+        let state: GameState = { ...initialState };
+
+        // 1. Add "limping" (L)
+        state = gameReducer(state, {
+          type: 'ADD_SOLUTION',
+          guess: 'limping',
+          feedback: 'Nice one! +10',
+          points: 10,
+          mode: GameMode.PRACTICE,
+        });
+
+        // 2. Add "leapfrog" (Le comes before Li)
+        state = gameReducer(state, {
+          type: 'ADD_SOLUTION',
+          guess: 'leapfrog',
+          feedback: 'Nice one! +13',
+          points: 13,
+          mode: GameMode.PRACTICE,
+        });
+
+        // Alphabetical order means 'leapfrog' comes first
+        expect(state.solutions).toEqual(['leapfrog', 'limping']);
+        expect(state.points).toBe(23);
+      });
+
+      it('strictly enforces alphabetical sorting regardless of entry order', () => {
+        let state: GameState = { ...initialState, solutions: ['banana', 'cherry'] };
+
+        // Add a word that belongs at the front of the list
+        const action = {
+          type: 'ADD_SOLUTION' as const,
+          guess: 'apple',
+          feedback: 'Nice one! +5',
+          points: 5,
+          mode: GameMode.PRACTICE,
+        };
+
+        const newState = gameReducer(state, action);
+
+        // "apple" must be inserted at index 0, not appended or prepended
+        expect(newState.solutions).toEqual(['apple', 'banana', 'cherry']);
+      });
     });
 
     describe('RESET_GAME', () => {
