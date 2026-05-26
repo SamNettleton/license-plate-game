@@ -72,7 +72,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, guess: action.payload };
     case 'ADD_SOLUTION':
       const storageKey = STORAGE_KEY[action.mode];
-      const updatedSolutions = [action.guess, ...state.solutions];
+      const updatedSolutions = [...state.solutions, action.guess].sort((a, b) =>
+        a.localeCompare(b),
+      );
       const updatedPoints = state.points + action.points;
 
       const progress: SavedProgress = {
