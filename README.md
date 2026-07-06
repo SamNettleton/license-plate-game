@@ -1,6 +1,5 @@
 # License Plate Game
 
-**This project is self-hosted. Due to change in location, the website will be unavailable 7/2-7/5.**
 **Website:** https://licenseplate.radrabbit.xyz/
 
 ## Objective
