@@ -15,7 +15,6 @@ describe('formatGameStatsForSharing', () => {
   });
 
   it('returns an empty string if gameStats is falsy', () => {
-    // @ts-expect-error testing runtime guard
     expect(formatGameStatsForSharing(null)).toBe('');
   });
 
@@ -77,8 +76,7 @@ describe('formatGameStatsForSharing', () => {
     expect(result).toBe(expectedLines.join('\n'));
   });
 
-  it('renders correctly for over-achieving progress (Supersonic @ 115%+)', () => {
-    // 115% hits all 6 bar thresholds (1, 25, 50, 75, 90, 100) -> 6 filled blocks using '🟪'
+  it('formats game stats correctly at 115% progress (Supersonic)', () => {
     const stats: GameShareStats = { points: 115, goalPoints: 100 };
     const result = formatGameStatsForSharing(stats, mockDate);
 

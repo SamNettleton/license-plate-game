@@ -6,13 +6,13 @@ export type GameShareStats = {
 };
 
 export const formatGameStatsForSharing = (
-  gameStats: GameShareStats,
+  gameStats: GameShareStats | null | undefined,
   currentDate = new Date(),
 ): string => {
   if (!gameStats) return '';
 
   const { points, goalPoints } = gameStats;
-  const currentPercentage = goalPoints > 0 ? (points / goalPoints) * 100 : 0;
+  const currentPercentage = goalPoints > 0 ? Math.round((points / goalPoints) * 100) : 0;
 
   const dateStr = currentDate.toLocaleDateString('en-US', {
     month: 'short',
@@ -21,6 +21,7 @@ export const formatGameStatsForSharing = (
   });
 
   const thresholds = [1, 25, 50, 75, 90, 100];
+
   const { label, emoji, filledEmoji } = getMilestone(currentPercentage);
   const emptyEmoji = '⬛';
 

@@ -78,13 +78,13 @@ describe('ResultsModal Component', () => {
       renderWithClient(
         <ResultsModal
           {...defaultProps}
-          tierTimes={{ Parked: 75 }} // 1 minute 15 seconds
+          elapsedSeconds={75} // 1 minute 15 seconds
           points={0}
           goalPoints={100}
         />,
       );
 
-      // Primary split duration for Tier 1
+      // Primary split duration for Tier 0 (Parked)
       expect(screen.getByText('1:15')).toBeInTheDocument();
       // Total subtext should NOT appear for the first tier (index 0)
       expect(screen.queryByText(/Total 1:15/i)).not.toBeInTheDocument();
