@@ -40,7 +40,7 @@ export const getMilestone = (percent: number): Milestone => {
  */
 export const getTierForPoints = (points: number, goalPoints: number): string => {
   if (goalPoints <= 0) return TIER_THRESHOLDS[0].label;
-  const percent = (points / goalPoints) * 100;
+  const percent = Math.round((points / goalPoints) * 100 * 100) / 100;
   return getMilestone(percent).label;
 };
 

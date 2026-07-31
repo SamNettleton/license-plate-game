@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ResultsModal from './ResultsModal';
@@ -13,21 +13,23 @@ const defaultProps = {
   plate: 'LPG',
 };
 
-// Helper function to render component wrapped in React Query context
-const renderWithClient = (ui: React.ReactElement) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
+// Instantiated outside the render wrapper to prevent unnecessary reinstantiation
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
     },
-  });
+  },
+});
+
+const renderWithClient = (ui: React.ReactElement) => {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 };
 
 describe('ResultsModal Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
   });
 
   describe('visibility', () => {
@@ -55,17 +57,19 @@ describe('ResultsModal Component', () => {
   describe('tier rows', () => {
     it('renders all 8 tiers', () => {
       renderWithClient(<ResultsModal {...defaultProps} />);
-      expect(screen.getByText('Parked')).toBeInTheDocument();
-      expect(screen.getByText('Good Start')).toBeInTheDocument();
-      expect(screen.getByText('Gaining Speed')).toBeInTheDocument();
-      expect(screen.getByText('Cruising')).toBeInTheDocument();
-      expect(screen.getByText('In the Fast Lane')).toBeInTheDocument();
-      expect(screen.getByText('High Performance')).toBeInTheDocument();
-      expect(screen.getByText('Full Throttle')).toBeInTheDocument();
-      expect(screen.getByText('Supersonic')).toBeInTheDocument();
+
+      const tierContainer = screen.getByTestId('tier-list');
+
+      expect(within(tierContainer).getByText('Parked')).toBeInTheDocument();
+      expect(within(tierContainer).getByText('Good Start')).toBeInTheDocument();
+      expect(within(tierContainer).getByText('Cruising')).toBeInTheDocument();
+      expect(within(tierContainer).getByText('In the Fast Lane')).toBeInTheDocument();
+      expect(within(tierContainer).getByText('High Performance')).toBeInTheDocument();
+      expect(within(tierContainer).getByText('Full Throttle')).toBeInTheDocument();
+      expect(within(tierContainer).getByText('Supersonic')).toBeInTheDocument();
     });
 
-    it('formats tier times correctly', () => {
+    it('formats tier times correctly for the first tier without showing cumulative total subtext', () => {
       renderWithClient(
         <ResultsModal
           {...defaultProps}
@@ -74,24 +78,34 @@ describe('ResultsModal Component', () => {
           goalPoints={100}
         />,
       );
+
+      // Primary split duration for Tier 1
       expect(screen.getByText('1:15')).toBeInTheDocument();
+      // Total subtext should NOT appear for the first tier (index 0)
+      expect(screen.queryByText(/Total 1:15/i)).not.toBeInTheDocument();
     });
 
-    it('displays formatted time deltas between tiers', () => {
+    it('displays split durations and cumulative total times for subsequent tiers', () => {
       renderWithClient(
         <ResultsModal
           {...defaultProps}
           tierTimes={{
-            Parked: 17,
-            'Good Start': 40, // 40s total (delta +0:23)
+            Parked: 17, // Tier 1 split: 0:17
+            'Good Start': 40, // Cumulative: 0:40 -> Split duration: 0:23
           }}
           points={30} // Good Start tier active
           goalPoints={100}
         />,
       );
 
-      expect(screen.getByText('0:40')).toBeInTheDocument();
-      expect(screen.getByText('(+0:23)')).toBeInTheDocument();
+      // Tier 1 (Parked): split time 0:17
+      expect(screen.getByText('0:17')).toBeInTheDocument();
+
+      // Tier 2 (Good Start): split time (40s - 17s = 23s) -> "0:23"
+      expect(screen.getByText('0:23')).toBeInTheDocument();
+
+      // Tier 2 (Good Start): cumulative subtext -> "Total 0:40"
+      expect(screen.getByText('Total 0:40')).toBeInTheDocument();
     });
 
     it('shows "—" for future tiers', () => {

@@ -75,9 +75,17 @@ describe('game.ts', () => {
       expect(getPointsForTier(25, -50)).toBe(0);
     });
 
-    it('calculates the exact point ceiling needed for a given percentage threshold', () => {
-      expect(getPointsForTier(25, 100)).toBe(25);
-      expect(getPointsForTier(50, 100)).toBe(50);
+    it('calculates exact point requirements for standard and bonus thresholds', () => {
+      // Standard tiers at 100 goal points
+      expect(getPointsForTier(0, 100)).toBe(0); // Parked
+      expect(getPointsForTier(25, 100)).toBe(25); // Gaining Speed
+      expect(getPointsForTier(100, 100)).toBe(100); // Full Throttle
+
+      // Bonus tier above 100%
+      expect(getPointsForTier(115, 100)).toBe(115); // Supersonic
+
+      // Handles fractional rounding upwards (e.g. 25% of 35 points = 8.75 -> 9)
+      expect(getPointsForTier(25, 35)).toBe(9);
     });
 
     it('rounds up partial points using Math.ceil', () => {

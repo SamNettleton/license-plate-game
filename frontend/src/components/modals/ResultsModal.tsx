@@ -143,7 +143,7 @@ export default function ResultsModal({
           Tier Splits
         </Typography>
 
-        <Box sx={tiersContainerStyles}>
+        <Box sx={tiersContainerStyles} data-testid="tier-list">
           {TIER_THRESHOLDS.map((tier, index) => {
             const isCurrentTier = index === currentTierIndex;
             const isFutureTier = index > currentTierIndex;
