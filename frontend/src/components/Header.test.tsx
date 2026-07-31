@@ -34,12 +34,6 @@ describe('Header Component', () => {
       },
     });
 
-    vi.stubGlobal('navigator', {
-      clipboard: {
-        writeText: vi.fn().mockImplementation(() => Promise.resolve()),
-      },
-    });
-
     (useColorScheme as any).mockReturnValue({
       mode: 'dark',
       setMode: mockSetMode,
@@ -148,7 +142,7 @@ describe('Header Component', () => {
     });
   });
 
-  describe('Stats Modal & Sharing', () => {
+  describe('Stats Modal Navigation', () => {
     it('does not render stats button on the homepage', () => {
       renderHeader('/');
       expect(screen.queryByLabelText('view stats')).not.toBeInTheDocument();

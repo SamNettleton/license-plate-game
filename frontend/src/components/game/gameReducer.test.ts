@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { gameReducer, initialState, createInitialState, GameState } from './gameReducer';
-import { GameMode, TIER_THRESHOLDS } from '@/constants/game';
+import { GameMode, getTierForPoints, TIER_THRESHOLDS } from '@/constants/game';
 
 beforeEach(() => {
   localStorage.clear();
@@ -22,10 +22,9 @@ describe('gameReducer', () => {
         'lp_practice',
         JSON.stringify({ solutions: ['leapfrog'], points: 13, lastUpdated: '2024-01-01' }),
       );
-      const state = createInitialState(GameMode.PRACTICE, 100);
+      const state = createInitialState(GameMode.PRACTICE);
       expect(state.solutions).toEqual(['leapfrog']);
       expect(state.points).toBe(13);
-      expect(state.mode).toBe(GameMode.PRACTICE);
     });
 
     it('returns fresh state for daily mode when saved date is stale', () => {
@@ -33,7 +32,7 @@ describe('gameReducer', () => {
         'lp_daily',
         JSON.stringify({ solutions: ['oldword'], points: 5, lastUpdated: '2000-01-01' }),
       );
-      const state = createInitialState(GameMode.DAILY, 100);
+      const state = createInitialState(GameMode.DAILY);
       expect(state).toEqual(initialState);
     });
   });
@@ -61,7 +60,6 @@ describe('gameReducer', () => {
           guess: 'leapfrog',
           feedback: 'Nice one! +13',
           points: 13,
-          mode: GameMode.PRACTICE,
           goalPoints: 100,
         };
         const newState = gameReducer(state, action);
@@ -85,7 +83,6 @@ describe('gameReducer', () => {
           guess: 'leapfrog',
           feedback: 'Nice one! +13',
           points: 13,
-          mode: GameMode.PRACTICE,
           goalPoints: 100,
         };
         const newState = gameReducer(state, action);
@@ -104,7 +101,6 @@ describe('gameReducer', () => {
           guess: 'limping',
           feedback: 'Nice one! +10',
           points: 10,
-          mode: GameMode.PRACTICE,
           goalPoints: 100,
         });
 
@@ -113,7 +109,6 @@ describe('gameReducer', () => {
           guess: 'leapfrog',
           feedback: 'Nice one! +13',
           points: 13,
-          mode: GameMode.PRACTICE,
           goalPoints: 100,
         });
 
@@ -129,7 +124,6 @@ describe('gameReducer', () => {
           guess: 'apple',
           feedback: 'Nice one! +5',
           points: 5,
-          mode: GameMode.PRACTICE,
           goalPoints: 100,
         };
 
@@ -140,7 +134,7 @@ describe('gameReducer', () => {
       it('records completed tier timing when crossing a tier threshold', () => {
         const state: GameState = {
           ...initialState,
-          activeTierLabel: TIER_THRESHOLDS[0].label, // Parked
+          points: 0, // Starts in the 'Parked' threshold
           elapsedSeconds: 45,
         };
 
@@ -148,8 +142,7 @@ describe('gameReducer', () => {
           type: 'ADD_SOLUTION' as const,
           guess: 'leapfrog',
           feedback: 'Great!',
-          points: 15, // Crosses into 'Good Start' threshold (10%)
-          mode: GameMode.PRACTICE,
+          points: 15, // Crosses into 'Good Start' threshold (15 points / 100 goalPoints = 15%)
           goalPoints: 100,
         };
 
@@ -157,7 +150,9 @@ describe('gameReducer', () => {
 
         // Previous tier ('Parked') should capture elapsed seconds at completion
         expect(newState.tierTimes[TIER_THRESHOLDS[0].label]).toBe(45);
-        expect(newState.activeTierLabel).toBe(TIER_THRESHOLDS[1].label);
+
+        const newTierLabel = getTierForPoints(newState.points, action.goalPoints);
+        expect(newTierLabel).toBe(TIER_THRESHOLDS[1].label);
       });
     });
 
@@ -216,8 +211,6 @@ describe('gameReducer', () => {
           tierTimes: { Parked: 5, 'Good Start': 12 },
           elapsedSeconds: 12,
           timerRunning: true,
-          mode: GameMode.PRACTICE,
-          activeTierLabel: 'Good Start',
         };
         const newState = gameReducer(state, { type: 'RESET_GAME' });
         expect(newState).toEqual(initialState);

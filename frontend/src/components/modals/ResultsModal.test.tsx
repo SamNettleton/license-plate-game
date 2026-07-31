@@ -3,14 +3,17 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ResultsModal from './ResultsModal';
+import { ShowChart, ShowerSharp } from '@mui/icons-material';
 
 const defaultProps = {
   open: true,
   onClose: vi.fn(),
+  elapsedSeconds: 0,
   tierTimes: {},
   points: 0,
   goalPoints: 100,
   plate: 'LPG',
+  showShareButton: false,
 };
 
 // Instantiated outside the render wrapper to prevent unnecessary reinstantiation
@@ -48,9 +51,11 @@ describe('ResultsModal Component', () => {
   describe('summary section', () => {
     it('shows the current milestone label and points', () => {
       renderWithClient(<ResultsModal {...defaultProps} points={50} goalPoints={100} />);
-      // 50% = Cruising tier — appears in both the summary and the tier list
-      expect(screen.getAllByText('Cruising').length).toBeGreaterThan(0);
-      expect(screen.getByText(/50 \/ 100 pts/)).toBeInTheDocument();
+
+      const progressContainer = screen.getByTestId('progress-summary');
+
+      expect(within(progressContainer).getByText('Cruising')).toBeInTheDocument();
+      expect(within(progressContainer).getByText(/50 \/ 100 pts/)).toBeInTheDocument();
     });
   });
 
@@ -114,15 +119,6 @@ describe('ResultsModal Component', () => {
       const dashes = screen.getAllByText('—');
       expect(dashes.length).toBeGreaterThan(0);
     });
-
-    it('shows "0:00" for completed tiers with no recorded time', () => {
-      renderWithClient(
-        <ResultsModal {...defaultProps} points={50} goalPoints={100} tierTimes={{}} />,
-      );
-      // At 50% (Cruising), Parked, Good Start, and Gaining Speed are past tiers with 0 time
-      const zeroTimes = screen.getAllByText('0:00');
-      expect(zeroTimes.length).toBeGreaterThanOrEqual(2);
-    });
   });
 
   describe('close button', () => {
@@ -135,21 +131,43 @@ describe('ResultsModal Component', () => {
   });
 
   describe('share button', () => {
-    it('renders when onShare is provided', () => {
-      renderWithClient(<ResultsModal {...defaultProps} onShare={vi.fn()} />);
-      expect(screen.getByText(/Share Results/i)).toBeInTheDocument();
+    beforeEach(() => {
+      // Mock the clipboard API
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: vi.fn().mockResolvedValue(undefined),
+        },
+      });
     });
 
-    it('calls onShare when clicked', () => {
-      const onShare = vi.fn();
-      renderWithClient(<ResultsModal {...defaultProps} onShare={onShare} />);
-      fireEvent.click(screen.getByText(/Share Results/i));
-      expect(onShare).toHaveBeenCalledOnce();
+    afterEach(() => {
+      vi.restoreAllMocks();
     });
 
-    it('does not render when onShare is not provided', () => {
-      renderWithClient(<ResultsModal {...defaultProps} />);
-      expect(screen.queryByText(/Share Results/i)).not.toBeInTheDocument();
+    it('renders when showShareButton is true', () => {
+      renderWithClient(<ResultsModal {...defaultProps} showShareButton={true} />);
+      expect(screen.getByRole('button', { name: /share results/i })).toBeInTheDocument();
+    });
+
+    it('does not render when showShareButton is false', () => {
+      renderWithClient(<ResultsModal {...defaultProps} showShareButton={false} />);
+      expect(screen.queryByRole('button', { name: /share results/i })).not.toBeInTheDocument();
+    });
+
+    it('copies results to clipboard and shows success toast when clicked', async () => {
+      renderWithClient(<ResultsModal {...defaultProps} showShareButton={true} />);
+
+      const shareButton = screen.getByRole('button', { name: /share results/i });
+      fireEvent.click(shareButton);
+
+      // Verify clipboard write occurred
+      expect(navigator.clipboard.writeText).toHaveBeenCalledOnce();
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        expect.stringContaining('License Plate Game'),
+      );
+
+      // Verify feedback snackbar/toast renders
+      expect(await screen.findByText(/results copied to clipboard/i)).toBeInTheDocument();
     });
   });
 });

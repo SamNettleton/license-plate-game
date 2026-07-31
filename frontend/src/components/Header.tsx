@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AppBar, Toolbar, IconButton, Box, Tooltip, useColorScheme, Snackbar } from '@components';
+import { AppBar, Toolbar, IconButton, Box, Tooltip, useColorScheme } from '@components';
 import {
   LightModeIcon,
   DarkModeIcon,
@@ -15,7 +15,6 @@ import ConfirmationDialog from '@/components/modals/ConfirmationDialog';
 import Logo from '@/components/Logo';
 import { resetPracticeGame, hasPracticeProgress } from '@/utils/practiceRandomizer';
 import { useQueryClient } from '@tanstack/react-query';
-import { getMilestone } from '@/constants/game';
 
 type HeaderProps = {
   resultsOpen: boolean;
@@ -26,7 +25,6 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
   const { mode, setMode } = useColorScheme();
   const [modalOpen, setModalOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [shareToastOpen, setShareToastOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -36,7 +34,7 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
   const isPracticePage = location.pathname === '/practice';
 
   type ActiveGameTierData = {
-    elapsedSeconds?: number;
+    elapsedSeconds: number;
     goalPoints: number;
     plate: string;
     points: number;
@@ -53,23 +51,6 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
     });
     return unsubscribe;
   }, [queryClient]);
-
-  const handleShare = async () => {
-    const gameStats = queryClient.getQueryData(['active-game-results']);
-
-    if (!gameStats) {
-      console.warn('No active game data found to share.');
-      return;
-    }
-
-    try {
-      const textToShare = formatGameStatsForSharing(gameStats);
-      await navigator.clipboard.writeText(textToShare);
-      setShareToastOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-    }
-  };
 
   const handleRandomizeClick = () => {
     if (hasPracticeProgress()) {
@@ -90,8 +71,8 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
       {/* Confirmation Dialog for destructive action */}
       <ConfirmationDialog
         content="This will clear your current progress. Continue?"
-        title="New Random Plate?"
         open={confirmOpen}
+        title="New Random Plate?"
         onConfirm={executeRandomize}
         onClose={() => setConfirmOpen(false)}
       />
@@ -167,62 +148,20 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
         <HowToPlayModal open={modalOpen} onClose={() => setModalOpen(false)} />
         {(isDailyPage || isPracticePage) && (
           <ResultsModal
+            elapsedSeconds={gameTierData?.elapsedSeconds ?? 0}
             goalPoints={gameTierData?.goalPoints ?? 0}
             open={resultsOpen}
             plate={gameTierData?.plate ?? ''}
             points={gameTierData?.points ?? 0}
+            showShareButton={isDailyPage}
             tierTimes={gameTierData?.tierTimes ?? {}}
             onClose={() => setResultsOpen(false)}
-            onShare={isDailyPage ? handleShare : undefined}
           />
         )}
       </Toolbar>
-
-      <Snackbar
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        autoHideDuration={2000}
-        message="Results copied to clipboard!"
-        open={shareToastOpen}
-        sx={{
-          mt: 7,
-        }}
-        onClose={() => setShareToastOpen(false)}
-      />
     </AppBar>
   );
 }
-
-const formatGameStatsForSharing = (gameStats: any) => {
-  if (!gameStats) return '';
-
-  const { points, goalPoints } = gameStats;
-  const currentPercentage = goalPoints > 0 ? (points / goalPoints) * 100 : 0;
-
-  const dateStr = new Date().toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  // 6 Thresholds to fill 6 squares: 1, 25, 50, 75, 90, 100
-  const thresholds = [1, 25, 50, 75, 90, 100];
-
-  const { label, emoji, filledEmoji } = getMilestone(currentPercentage);
-  const emptyEmoji = '⬛';
-
-  const visualBar = thresholds
-    .map((t) => (currentPercentage >= t ? filledEmoji : emptyEmoji))
-    .join('');
-
-  return [
-    `License Plate Game • ${dateStr}`,
-    '',
-    `${label} ${emoji} (${points} pts)`,
-    visualBar,
-    '',
-    window.location.origin,
-  ].join('\n');
-};
 
 const toolbarStyles = {
   display: 'flex',

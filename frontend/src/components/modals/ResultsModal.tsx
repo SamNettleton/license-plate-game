@@ -10,34 +10,25 @@ import {
   IconButton,
   Button,
   Slide,
+  Snackbar,
   useTheme,
   useMediaQuery,
 } from '@components';
+import { formatTime } from '@/utils/formatters';
+import { formatGameStatsForSharing } from '@/utils/shareFormatter';
 import type { TransitionProps } from '@mui/material/transitions';
 import { CloseIcon, BarChartIcon, ShareIcon } from '@icons';
 import { getMilestone, TIER_THRESHOLDS } from '@/constants/game';
-import { useQueryClient } from '@tanstack/react-query';
-
-/** Format seconds as m:ss */
-function formatTime(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
 
 type Props = {
+  elapsedSeconds: number;
   goalPoints: number;
   open: boolean;
   plate: string;
   points: number;
+  showShareButton: boolean;
   tierTimes: Record<string, number>;
   onClose: () => void;
-  onShare?: () => void;
-};
-
-type ActiveGameTierData = {
-  elapsedSeconds?: number;
-  tierTimes?: Record<string, number>;
 };
 
 const SlideUp = React.forwardRef(function SlideUp(
@@ -48,21 +39,19 @@ const SlideUp = React.forwardRef(function SlideUp(
 });
 
 export default function ResultsModal({
+  elapsedSeconds,
   goalPoints,
   open,
   plate,
   points,
+  showShareButton,
   tierTimes,
   onClose,
-  onShare,
 }: Props) {
+  const [shareToastOpen, setShareToastOpen] = React.useState(false);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  const queryClient = useQueryClient();
-  const activeData = queryClient.getQueryData<ActiveGameTierData>(['active-game-tier-times']);
-  const liveElapsed = activeData?.elapsedSeconds ?? 0;
-  const liveTierTimes = activeData?.tierTimes ?? tierTimes;
 
   const currentPercentage = goalPoints > 0 ? (points / goalPoints) * 100 : 0;
   const { label: currentLabel, emoji: currentEmoji } = getMilestone(currentPercentage);
@@ -75,13 +64,22 @@ export default function ResultsModal({
   };
   const currentTierIndex = getCurrentTierIndex();
 
-  // Array storing resolved cumulative elapsed seconds for every tier up to current
   const resolvedTierTimes = TIER_THRESHOLDS.map((tier, index) => {
     if (index === currentTierIndex) {
-      return liveTierTimes[tier.label] ?? liveElapsed ?? 0;
+      return elapsedSeconds;
     }
-    return liveTierTimes[tier.label] ?? 0;
+    return tierTimes[tier.label] ?? 0;
   });
+
+  const handleShare = async () => {
+    try {
+      const textToShare = formatGameStatsForSharing({ points, goalPoints });
+      await navigator.clipboard.writeText(textToShare);
+      setShareToastOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
 
   return (
     <Dialog
@@ -115,7 +113,7 @@ export default function ResultsModal({
 
       <DialogContent sx={dialogContentStyles}>
         {/* Current status summary */}
-        <Box sx={summaryBoxStyles}>
+        <Box sx={summaryBoxStyles} data-testid="progress-summary">
           <Typography variant="h4" sx={emojiHeadingStyles}>
             {currentEmoji}
           </Typography>
@@ -124,15 +122,14 @@ export default function ResultsModal({
               {currentLabel}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {points} / {goalPoints} pts &nbsp;·&nbsp;{' '}
-              {goalPoints > 0 ? Math.round(currentPercentage) : 0}%
+              {points} / {goalPoints} pts · {goalPoints > 0 ? Math.round(currentPercentage) : 0}%
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Total time: {formatTime(liveElapsed)}
+              Total time: {formatTime(elapsedSeconds)}
             </Typography>
           </Box>
           <Box sx={{ ml: 'auto' }}>
-            <Typography variant="caption" color="text.disabled" sx={{ fontFamily: 'monospace' }}>
+            <Typography variant="caption" sx={plateStyles}>
               {plate}
             </Typography>
           </Box>
@@ -200,13 +197,26 @@ export default function ResultsModal({
           })}
         </Box>
       </DialogContent>
+
+      <Snackbar
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        autoHideDuration={2000}
+        message="Results copied to clipboard!"
+        open={shareToastOpen}
+        onClose={() => setShareToastOpen(false)}
+        sx={{
+          mt: 7,
+          zIndex: (theme) => theme.zIndex.modal + 1,
+        }}
+      />
+
       {/* Sticky Action Footer */}
-      {onShare && (
+      {showShareButton && (
         <DialogActions sx={stickyFooterStyles}>
           <Button
             variant="contained"
             fullWidth
-            onClick={onShare}
+            onClick={handleShare}
             startIcon={<ShareIcon />}
             sx={shareButtonStyles}
           >
@@ -265,7 +275,7 @@ const dialogContentStyles = {
   px: 2.5,
   pt: 2,
   pb: 3,
-  overflowY: 'auto', // Scrollable interior
+  overflowY: 'auto',
 };
 
 const summaryBoxStyles = {
@@ -277,6 +287,18 @@ const summaryBoxStyles = {
   backgroundColor: 'action.hover',
   border: '1px solid',
   borderColor: 'divider',
+};
+
+const plateStyles = {
+  fontFamily: 'monospace',
+  color: 'text.secondary',
+  backgroundColor: 'background.paper',
+  border: '1px solid',
+  borderColor: 'divider',
+  px: 1,
+  py: 0.5,
+  borderRadius: 1,
+  letterSpacing: '0.05em',
 };
 
 const emojiHeadingStyles = {

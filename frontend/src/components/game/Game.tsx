@@ -6,9 +6,17 @@ import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
 import ResultBar from './ResultDisplay/ResultBar';
 import { Box, Grid } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
-import { GameMode } from '@/constants/game';
+import { GameMode, STORAGE_KEY } from '@/constants/game';
 import { useQueryClient } from '@tanstack/react-query';
 import { faro } from '@/App';
+
+type SavedProgress = {
+  solutions: string[];
+  points: number;
+  lastUpdated: string; // Storing as YYYY-MM-DD
+  tierTimes: Record<string, number>;
+  elapsedSeconds: number;
+};
 
 type Props = {
   plate: string;
@@ -18,17 +26,16 @@ type Props = {
   isModalOpen: boolean;
 };
 
-function Game({ plate, goalPoints, mode, isModalOpen: isModalOpenProp = false }: Props) {
+function Game({ plate, goalPoints, mode, isModalOpen }: Props) {
   const queryClient = useQueryClient();
-  const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
-  const isModalOpen = isModalOpenProp || isMobileResultsOpen;
-  const [state, dispatch] = React.useReducer(gameReducer, { mode, goalPoints }, () =>
-    createInitialState(mode, goalPoints),
-  );
+  const [state, dispatch] = React.useReducer(gameReducer, mode, createInitialState);
 
-  // Alert handling for displaying guess results
   const [showAlert, setShowAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
+  const [visibility, setVisibility] = React.useState(() =>
+    typeof document !== 'undefined' ? document.visibilityState : 'visible',
+  );
 
   React.useEffect(() => {
     queryClient.setQueryData(['active-game-tier-times'], {
@@ -44,9 +51,15 @@ function Game({ plate, goalPoints, mode, isModalOpen: isModalOpenProp = false }:
     };
   }, [state.tierTimes, state.points, state.elapsedSeconds, goalPoints, plate, queryClient]);
 
-  // Timer Lifecycle: Handles tab switching, unmounting, and modal pauses
   React.useEffect(() => {
-    const isPaused = isModalOpen || document.visibilityState === 'hidden';
+    const handleVisibility = () => setVisibility(document.visibilityState);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
+  // Pause game timer when modal is active or browser tab loses focus
+  React.useEffect(() => {
+    const isPaused = isModalOpen || visibility === 'hidden';
 
     if (isPaused) {
       dispatch({ type: 'PAUSE_TIMER' });
@@ -59,22 +72,11 @@ function Game({ plate, goalPoints, mode, isModalOpen: isModalOpenProp = false }:
       dispatch({ type: 'TICK_TIMER' });
     }, 1000);
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        dispatch({ type: 'PAUSE_TIMER' });
-      } else if (!isModalOpen) {
-        dispatch({ type: 'START_TIMER' });
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
       clearInterval(tickInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
       dispatch({ type: 'PAUSE_TIMER' });
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, visibility]);
 
   React.useEffect(() => {
     if (!state.lastFeedback) return;
@@ -84,6 +86,21 @@ function Game({ plate, goalPoints, mode, isModalOpen: isModalOpenProp = false }:
     }, 2000);
     return () => clearTimeout(timer);
   }, [state.lastFeedback]);
+
+  React.useEffect(() => {
+    const storageKey = STORAGE_KEY[mode];
+    const progress: SavedProgress = {
+      solutions: state.solutions,
+      points: state.points,
+      lastUpdated: new Date().toLocaleDateString('en-CA'),
+      tierTimes: state.tierTimes,
+      elapsedSeconds: state.elapsedSeconds,
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(progress));
+    } catch (err) {}
+  }, [state.solutions, state.points, state.tierTimes, state.elapsedSeconds, mode]);
 
   const checkGuess = async () => {
     if (isSubmitting) return;
@@ -102,7 +119,6 @@ function Game({ plate, goalPoints, mode, isModalOpen: isModalOpenProp = false }:
           guess: lowercaseGuess,
           feedback: result.message,
           points: result.points,
-          mode: mode,
           goalPoints: goalPoints,
         });
       } else {
