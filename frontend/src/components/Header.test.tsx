@@ -1,12 +1,12 @@
 import { render, screen, fireEvent, waitForElementToBeRemoved } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Import these
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './Header';
 import { useColorScheme } from '@components';
 import { hasPracticeProgress, resetPracticeGame } from '@/utils/practiceRandomizer';
 
-// Mock the components and the color scheme
+// Mock components and color scheme
 vi.mock('@components', async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -15,7 +15,7 @@ vi.mock('@components', async (importOriginal) => {
   };
 });
 
-// Mock the randomize utility
+// Mock randomize utility
 vi.mock('@/utils/practiceRandomizer', () => ({
   hasPracticeProgress: vi.fn(),
   resetPracticeGame: vi.fn(),
@@ -23,14 +23,14 @@ vi.mock('@/utils/practiceRandomizer', () => ({
 
 describe('Header Component', () => {
   const mockSetMode = vi.fn();
-  const queryClient = new QueryClient(); // Create a fresh client for tests
+  const mockSetResultsOpen = vi.fn();
+  let queryClient: QueryClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    vi.stubGlobal('navigator', {
-      clipboard: {
-        writeText: vi.fn().mockImplementation(() => Promise.resolve()),
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
       },
     });
 
@@ -40,55 +40,57 @@ describe('Header Component', () => {
     });
   });
 
-  const renderHeader = (initialRoute = '/') => {
+  const renderHeader = (
+    initialRoute = '/',
+    props = { resultsOpen: false, setResultsOpen: mockSetResultsOpen },
+  ) => {
     return render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[initialRoute]}>
-          <Header />
+          <Header {...props} />
         </MemoryRouter>
       </QueryClientProvider>,
     );
   };
 
-  describe('render', () => {
+  describe('Initial Render', () => {
     it('renders without crashing', () => {
       renderHeader();
       expect(screen.getByRole('banner')).toBeInTheDocument();
     });
   });
 
-  describe('Logo', () => {
+  describe('Logo Visibility', () => {
     it('renders the LPG logo on homepage', () => {
       renderHeader('/');
       expect(screen.getByText('LPG')).toBeInTheDocument();
     });
 
-    it('does NOT renders the LPG logo on other pages', () => {
-      renderHeader('/game');
+    it('does NOT render the LPG logo on other pages', () => {
+      renderHeader('/daily');
       expect(screen.queryByText('LPG')).not.toBeInTheDocument();
     });
   });
 
-  describe('Back Button', () => {
-    it('does NOT render on the homepage', () => {
+  describe('Navigation & Back Button', () => {
+    it('does NOT render back button on the homepage', () => {
       renderHeader('/');
       expect(screen.queryByLabelText('back to home')).not.toBeInTheDocument();
     });
 
-    it('renders on other pages', () => {
-      renderHeader('/game');
-      const backBtn = screen.getByLabelText('back to home');
-      expect(backBtn).toBeInTheDocument();
+    it('renders back button on non-home pages', () => {
+      renderHeader('/daily');
+      expect(screen.getByLabelText('back to home')).toBeInTheDocument();
     });
   });
 
-  describe('Randomize Button and Confirmation', () => {
-    it('does not render on non-practice pages', () => {
+  describe('Practice Plate Randomization', () => {
+    it('does not render randomize button on non-practice pages', () => {
       renderHeader('/');
       expect(screen.queryByLabelText('randomize plate')).not.toBeInTheDocument();
     });
 
-    it('renders on the practice page', () => {
+    it('renders randomize button on the practice page', () => {
       renderHeader('/practice');
       expect(screen.getByLabelText('randomize plate')).toBeInTheDocument();
     });
@@ -109,10 +111,7 @@ describe('Header Component', () => {
 
       fireEvent.click(screen.getByLabelText('randomize plate'));
 
-      // Should NOT call reset yet
       expect(resetPracticeGame).not.toHaveBeenCalled();
-
-      // Should show the dialog
       expect(screen.getByText('New Random Plate?')).toBeInTheDocument();
       expect(screen.getByText(/This will clear your current progress/i)).toBeInTheDocument();
     });
@@ -121,16 +120,12 @@ describe('Header Component', () => {
       vi.mocked(hasPracticeProgress).mockReturnValue(true);
       renderHeader('/practice');
 
-      // Open dialog
       fireEvent.click(screen.getByLabelText('randomize plate'));
 
-      // Click Continue button
       const continueBtn = screen.getByRole('button', { name: /continue/i });
       fireEvent.click(continueBtn);
 
       expect(resetPracticeGame).toHaveBeenCalledTimes(1);
-
-      // Wait for the animation to finish and the element to leave the DOM
       await waitForElementToBeRemoved(() => screen.queryByText('New Random Plate?'));
     });
 
@@ -147,51 +142,25 @@ describe('Header Component', () => {
     });
   });
 
-  describe('Share Button', () => {
-    it('does not render on the homepage', () => {
+  describe('Stats Modal Navigation', () => {
+    it('does not render stats button on the homepage', () => {
       renderHeader('/');
-      expect(screen.queryByLabelText('share results')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('view stats')).not.toBeInTheDocument();
     });
 
-    it('renders on the daily page', () => {
-      renderHeader('/daily');
-      expect(screen.getByLabelText('share results')).toBeInTheDocument();
+    it('renders stats button on daily and practice pages', () => {
+      const { unmount } = renderHeader('/daily');
+      expect(screen.getByLabelText('view stats')).toBeInTheDocument();
+      unmount();
+
+      renderHeader('/practice');
+      expect(screen.getByLabelText('view stats')).toBeInTheDocument();
     });
 
-    it('copies formatted results to clipboard when clicked', async () => {
-      const testData = {
-        points: 100,
-        goalPoints: 100,
-        plate: 'ABC',
-      };
-      queryClient.setQueryData(['active-game-results'], testData);
-
+    it('triggers setResultsOpen when stats button is clicked', () => {
       renderHeader('/daily');
-
-      const shareBtn = screen.getByLabelText('share results');
-      fireEvent.click(shareBtn);
-
-      expect(navigator.clipboard.writeText).toHaveBeenCalled();
-
-      const copiedText = vi.mocked(navigator.clipboard.writeText).mock.calls[0][0];
-      expect(copiedText).toContain('100 pts');
-      expect(copiedText).toContain('Full Throttle');
-    });
-
-    it('shows a toast notification after successful copy', async () => {
-      queryClient.setQueryData(['active-game-results'], {
-        points: 50,
-        goalPoints: 100,
-        plate: 'XYZ',
-      });
-
-      renderHeader('/daily');
-
-      fireEvent.click(screen.getByLabelText('share results'));
-
-      expect(
-        await screen.findByText(/Results copied to clipboard/i, {}, { timeout: 3000 }),
-      ).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText('view stats'));
+      expect(mockSetResultsOpen).toHaveBeenCalledWith(true);
     });
   });
 
@@ -203,7 +172,7 @@ describe('Header Component', () => {
       ).not.toBeInTheDocument();
     });
 
-    it('opens the tutorial modal when clicking the help icon', () => {
+    it('opens and closes the tutorial modal when interacting with help icon', () => {
       renderHeader('/');
 
       const helpBtn = screen.getByLabelText('how to play');
@@ -242,14 +211,14 @@ describe('Header Component', () => {
       expect(await screen.findByRole('tooltip')).toHaveTextContent('Switch to dark mode');
     });
 
-    it('calls setMode with the opposite mode when clicked from dark mode', () => {
+    it('calls setMode with light mode when clicked from dark mode', () => {
       renderHeader('/');
       const themeToggleBtn = screen.getByLabelText('toggle theme');
       fireEvent.click(themeToggleBtn);
       expect(mockSetMode).toHaveBeenCalledWith('light');
     });
 
-    it('calls setMode with the opposite mode when clicked from light mode', () => {
+    it('calls setMode with dark mode when clicked from light mode', () => {
       (useColorScheme as any).mockReturnValue({
         mode: 'light',
         setMode: mockSetMode,

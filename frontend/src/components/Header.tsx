@@ -1,26 +1,30 @@
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AppBar, Toolbar, IconButton, Box, Tooltip, useColorScheme, Snackbar } from '@components';
+import { AppBar, Toolbar, IconButton, Box, Tooltip, useColorScheme } from '@components';
 import {
   LightModeIcon,
   DarkModeIcon,
   HelpOutlineIcon as HelpIcon,
   BackIcon,
   RefreshIcon,
-  ShareIcon,
+  BarChartIcon,
 } from '@icons';
 import HowToPlayModal from '@/components/modals/HowToPlayModal';
+import ResultsModal from '@/components/modals/ResultsModal';
 import ConfirmationDialog from '@/components/modals/ConfirmationDialog';
 import Logo from '@/components/Logo';
 import { resetPracticeGame, hasPracticeProgress } from '@/utils/practiceRandomizer';
 import { useQueryClient } from '@tanstack/react-query';
-import { getMilestone } from '@/constants/game';
 
-export default function Header() {
+type HeaderProps = {
+  resultsOpen: boolean;
+  setResultsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
   const { mode, setMode } = useColorScheme();
   const [modalOpen, setModalOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [shareToastOpen, setShareToastOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -29,22 +33,24 @@ export default function Header() {
   const isDailyPage = location.pathname === '/daily';
   const isPracticePage = location.pathname === '/practice';
 
-  const handleShare = async () => {
-    const gameStats = queryClient.getQueryData(['active-game-results']);
-
-    if (!gameStats) {
-      console.warn('No active game data found to share.');
-      return;
-    }
-
-    try {
-      const textToShare = formatGameStatsForSharing(gameStats);
-      await navigator.clipboard.writeText(textToShare);
-      setShareToastOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-    }
+  type ActiveGameTierData = {
+    elapsedSeconds: number;
+    goalPoints: number;
+    plate: string;
+    points: number;
+    tierTimes: Record<string, number>;
   };
+
+  const [gameTierData, setGameTierData] = React.useState<ActiveGameTierData | undefined>(
+    queryClient.getQueryData<ActiveGameTierData>(['active-game-tier-times']),
+  );
+
+  React.useEffect(() => {
+    const unsubscribe = queryClient.getQueryCache().subscribe(() => {
+      setGameTierData(queryClient.getQueryData<ActiveGameTierData>(['active-game-tier-times']));
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const handleRandomizeClick = () => {
     if (hasPracticeProgress()) {
@@ -64,9 +70,9 @@ export default function Header() {
     <AppBar position="static" color="transparent" elevation={0}>
       {/* Confirmation Dialog for destructive action */}
       <ConfirmationDialog
+        content="This will clear your current progress. Continue?"
         open={confirmOpen}
         title="New Random Plate?"
-        content="This will clear your current progress. Continue?"
         onConfirm={executeRandomize}
         onClose={() => setConfirmOpen(false)}
       />
@@ -76,11 +82,11 @@ export default function Header() {
           {!isHomePage && (
             <Tooltip title="Back to home">
               <IconButton
-                edge="start"
-                color="inherit"
-                onClick={() => navigate('/')}
                 aria-label="back to home"
+                color="inherit"
+                edge="start"
                 sx={iconButtonStyles}
+                onClick={() => navigate('/')}
               >
                 <BackIcon sx={{ fontSize: '1.2rem' }} />
               </IconButton>
@@ -89,11 +95,11 @@ export default function Header() {
           {isPracticePage && (
             <Tooltip title="Randomize plate">
               <IconButton
-                edge="start"
-                color="inherit"
-                onClick={handleRandomizeClick}
                 aria-label="randomize plate"
+                color="inherit"
+                edge="start"
                 sx={iconButtonStyles}
+                onClick={handleRandomizeClick}
               >
                 <RefreshIcon sx={{ fontSize: '1.5rem' }} />
               </IconButton>
@@ -104,25 +110,25 @@ export default function Header() {
         <Box sx={logoStyles}>{isHomePage && <Logo />}</Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {isDailyPage && (
-            <Tooltip title="Share results">
+          {(isDailyPage || isPracticePage) && (
+            <Tooltip title="View stats">
               <IconButton
+                aria-label="view stats"
                 color="inherit"
-                onClick={handleShare}
-                aria-label="share results"
                 sx={iconButtonStyles}
+                onClick={() => setResultsOpen(true)}
               >
-                <ShareIcon sx={{ fontSize: '1.2rem' }} />
+                <BarChartIcon sx={{ fontSize: '1.3rem' }} />
               </IconButton>
             </Tooltip>
           )}
 
           <Tooltip title="How to play">
             <IconButton
-              color="inherit"
-              onClick={() => setModalOpen(true)}
               aria-label="how to play"
+              color="inherit"
               sx={iconButtonStyles}
+              onClick={() => setModalOpen(true)}
             >
               <HelpIcon />
             </IconButton>
@@ -130,63 +136,32 @@ export default function Header() {
 
           <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
             <IconButton
-              onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
-              color="inherit"
               aria-label="toggle theme"
+              color="inherit"
               sx={iconButtonStyles}
+              onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
             >
               {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
             </IconButton>
           </Tooltip>
         </Box>
         <HowToPlayModal open={modalOpen} onClose={() => setModalOpen(false)} />
+        {(isDailyPage || isPracticePage) && (
+          <ResultsModal
+            elapsedSeconds={gameTierData?.elapsedSeconds ?? 0}
+            goalPoints={gameTierData?.goalPoints ?? 0}
+            open={resultsOpen}
+            plate={gameTierData?.plate ?? ''}
+            points={gameTierData?.points ?? 0}
+            showShareButton={isDailyPage}
+            tierTimes={gameTierData?.tierTimes ?? {}}
+            onClose={() => setResultsOpen(false)}
+          />
+        )}
       </Toolbar>
-
-      <Snackbar
-        open={shareToastOpen}
-        autoHideDuration={2000}
-        onClose={() => setShareToastOpen(false)}
-        message="Results copied to clipboard!"
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{
-          mt: 7,
-        }}
-      />
     </AppBar>
   );
 }
-
-const formatGameStatsForSharing = (gameStats: any) => {
-  if (!gameStats) return '';
-
-  const { points, goalPoints } = gameStats;
-  const currentPercentage = goalPoints > 0 ? (points / goalPoints) * 100 : 0;
-
-  const dateStr = new Date().toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  // 6 Thresholds to fill 6 squares: 1, 25, 50, 75, 90, 100
-  const thresholds = [1, 25, 50, 75, 90, 100];
-
-  const { label, emoji, filledEmoji } = getMilestone(currentPercentage);
-  const emptyEmoji = '⬛';
-
-  const visualBar = thresholds
-    .map((t) => (currentPercentage >= t ? filledEmoji : emptyEmoji))
-    .join('');
-
-  return [
-    `License Plate Game • ${dateStr}`,
-    '',
-    `${label} ${emoji} (${points} pts)`,
-    visualBar,
-    '',
-    window.location.origin,
-  ].join('\n');
-};
 
 const toolbarStyles = {
   display: 'flex',

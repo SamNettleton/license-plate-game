@@ -2,10 +2,21 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Practice from './Practice';
 import * as plateService from '../api/plateService';
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
+// Mock plateService API
 vi.mock('../api/plateService', () => ({
   fetchRandomPlate: vi.fn(),
+}));
+
+// Mock Grafana Faro telemetry consumed by underlying Game component
+vi.mock('@/App', () => ({
+  faro: {
+    api: {
+      pushError: vi.fn(),
+      pushLog: vi.fn(),
+    },
+  },
 }));
 
 const queryClient = new QueryClient({
@@ -23,40 +34,54 @@ describe('Practice Page', () => {
     vi.clearAllMocks();
   });
 
-  it('shows loading state then renders the game', async () => {
-    const mockPlate = { sequence: 'ABC', solutionsCount: 5, goalPoints: 10 };
-    (plateService.fetchRandomPlate as any).mockResolvedValue(mockPlate);
+  describe('Data Loading and Cache', () => {
+    it('shows loading state then renders the game', async () => {
+      const mockPlate = { sequence: 'ABC', solutionsCount: 5, goalPoints: 10 };
+      (plateService.fetchRandomPlate as any).mockResolvedValue(mockPlate);
 
-    render(<Practice />, { wrapper });
+      render(<Practice resultsOpen={false} />, { wrapper });
 
-    expect(screen.getByText(/Crafting a random plate/i)).toBeInTheDocument();
+      expect(screen.getByText(/Crafting a random plate/i)).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getByText('ABC')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('ABC')).toBeInTheDocument();
+      });
+
+      expect(localStorage.getItem('lp_practice_current_plate')).toContain('ABC');
     });
 
-    expect(localStorage.getItem('lp_practice_current_plate')).toContain('ABC');
-  });
+    it('loads directly from localStorage if data exists', async () => {
+      const savedPlate = { sequence: 'XYZ', solutionsCount: 3, goalPoints: 5 };
+      localStorage.setItem('lp_practice_current_plate', JSON.stringify(savedPlate));
 
-  it('loads directly from localStorage if data exists', async () => {
-    const savedPlate = { sequence: 'XYZ', solutionsCount: 3, goalPoints: 5 };
-    localStorage.setItem('lp_practice_current_plate', JSON.stringify(savedPlate));
+      render(<Practice resultsOpen={false} />, { wrapper });
 
-    render(<Practice />, { wrapper });
-
-    // Should find XYZ immediately without calling the API
-    await waitFor(() => {
-      expect(screen.getByText('XYZ')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('XYZ')).toBeInTheDocument();
+      });
+      expect(plateService.fetchRandomPlate).not.toHaveBeenCalled();
     });
-    expect(plateService.fetchRandomPlate).not.toHaveBeenCalled();
+
+    it('renders error state when the API fails', async () => {
+      (plateService.fetchRandomPlate as any).mockRejectedValue(new Error('Network Error'));
+
+      render(<Practice resultsOpen={false} />, { wrapper });
+
+      const errorMsg = await screen.findByText(/Network Error/i);
+      expect(errorMsg).toBeInTheDocument();
+    });
   });
 
-  it('renders error state when the API fails', async () => {
-    (plateService.fetchRandomPlate as any).mockRejectedValue(new Error('Network Error'));
+  describe('Modal Integration', () => {
+    it('renders the game without crashing when resultsOpen is true', async () => {
+      const savedPlate = { sequence: 'PRC', solutionsCount: 8, goalPoints: 15 };
+      localStorage.setItem('lp_practice_current_plate', JSON.stringify(savedPlate));
 
-    render(<Practice />, { wrapper });
+      render(<Practice resultsOpen={true} />, { wrapper });
 
-    const errorMsg = await screen.findByText(/Network Error/i);
-    expect(errorMsg).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('PRC')).toBeInTheDocument();
+      });
+    });
   });
 });

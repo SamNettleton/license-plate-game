@@ -8,3 +8,5 @@ export { default as ErrorIcon } from '@mui/icons-material/HighlightOff';
 export { default as RefreshIcon } from '@mui/icons-material/Refresh';
 export { default as DeleteIcon } from '@mui/icons-material/Backspace';
 export { default as ShareIcon } from '@mui/icons-material/Share';
+export { default as BarChartIcon } from '@mui/icons-material/BarChart';
+export { default as CloseIcon } from '@mui/icons-material/Close';

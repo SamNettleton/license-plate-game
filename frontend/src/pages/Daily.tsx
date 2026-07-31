@@ -6,7 +6,7 @@ import { Box, Fade } from '@components';
 import LoadingDisplay from '@/components/feedback/LoadingDisplay';
 import ErrorDisplay from '@/components/feedback/ErrorDisplay';
 
-function Daily() {
+function Daily({ resultsOpen }: { resultsOpen: boolean }) {
   const today = new Date().toISOString().split('T')[0];
 
   const {
@@ -34,6 +34,7 @@ function Daily() {
           solutionsCount={challenge.solutionsCount}
           goalPoints={challenge.goalPoints}
           mode={GameMode.DAILY}
+          isModalOpen={resultsOpen}
         ></Game>
       </Box>
     </Fade>

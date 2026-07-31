@@ -1,3 +1,4 @@
+import * as React from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,20 +26,28 @@ export const faro = initializeFaro({
   ],
 });
 
+const queryClient = new QueryClient();
+
 function App() {
-  const queryClient = new QueryClient();
+  const [resultsOpen, setResultsOpen] = React.useState(false);
 
   return (
     <ThemeProvider theme={theme} defaultMode="dark">
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
-        <AppContent></AppContent>
+        <AppContent resultsOpen={resultsOpen} setResultsOpen={setResultsOpen} />
       </QueryClientProvider>
     </ThemeProvider>
   );
 }
 
-function AppContent() {
+function AppContent({
+  resultsOpen,
+  setResultsOpen,
+}: {
+  resultsOpen: boolean;
+  setResultsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const { mode } = useColorScheme();
   if (!mode) {
     return null;
@@ -54,13 +63,13 @@ function AppContent() {
           overflow: 'hidden',
         }}
       >
-        <Header />
+        <Header resultsOpen={resultsOpen} setResultsOpen={setResultsOpen} />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
-            <Route path="/daily" element={<Daily />} />
-            <Route path="/practice" element={<Practice />} />
+            <Route path="/daily" element={<Daily resultsOpen={resultsOpen} />} />
+            <Route path="/practice" element={<Practice resultsOpen={resultsOpen} />} />
           </Routes>
         </Box>
       </Box>
