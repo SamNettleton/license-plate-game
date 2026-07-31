@@ -2,10 +2,21 @@ import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Daily from './Daily';
 import * as plateService from '../api/plateService';
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
+// Mock plateService API
 vi.mock('../api/plateService', () => ({
   fetchDailyPlate: vi.fn(),
+}));
+
+// Mock Grafana Faro telemetry consumed by underlying Game component
+vi.mock('@/App', () => ({
+  faro: {
+    api: {
+      pushError: vi.fn(),
+      pushLog: vi.fn(),
+    },
+  },
 }));
 
 const createTestQueryClient = () =>
@@ -29,30 +40,48 @@ describe('Daily Page', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  it('renders loading state initially and then shows the daily game', async () => {
-    const mockDailyPlate = {
-      sequence: 'DAY',
-      solutionsCount: 10,
-      goalPoints: 20,
-    };
-    (plateService.fetchDailyPlate as any).mockResolvedValue(mockDailyPlate);
+  describe('Data Loading and Rendering', () => {
+    it('renders loading state initially and then displays the game on success', async () => {
+      const mockDailyPlate = {
+        sequence: 'DAY',
+        solutionsCount: 10,
+        goalPoints: 20,
+      };
+      (plateService.fetchDailyPlate as any).mockResolvedValue(mockDailyPlate);
 
-    render(<Daily />, { wrapper });
+      render(<Daily resultsOpen={false} />, { wrapper });
 
-    expect(screen.getByText(/Crafting a daily plate/i)).toBeInTheDocument();
+      expect(screen.getByText(/Crafting a daily plate/i)).toBeInTheDocument();
 
-    const plateElement = await screen.findByText('DAY');
-    expect(plateElement).toBeInTheDocument();
+      const plateElement = await screen.findByText('DAY');
+      expect(plateElement).toBeInTheDocument();
 
-    expect(plateService.fetchDailyPlate).toHaveBeenCalledTimes(1);
+      expect(plateService.fetchDailyPlate).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders error state when the API call fails', async () => {
+      (plateService.fetchDailyPlate as any).mockRejectedValue(new Error('Network Error'));
+
+      render(<Daily resultsOpen={false} />, { wrapper });
+
+      const errorMsg = await screen.findByText(/Network Error/i);
+      expect(errorMsg).toBeInTheDocument();
+    });
   });
 
-  it('renders error state when the API fails', async () => {
-    (plateService.fetchDailyPlate as any).mockRejectedValue(new Error('Network Error'));
+  describe('Modal Integration', () => {
+    it('renders the game without crashing when resultsOpen is true', async () => {
+      const mockDailyPlate = {
+        sequence: 'LPG',
+        solutionsCount: 15,
+        goalPoints: 50,
+      };
+      (plateService.fetchDailyPlate as any).mockResolvedValue(mockDailyPlate);
 
-    render(<Daily />, { wrapper });
+      render(<Daily resultsOpen={true} />, { wrapper });
 
-    const errorMsg = await screen.findByText(/Network Error/i);
-    expect(errorMsg).toBeInTheDocument();
+      const plateElement = await screen.findByText('LPG');
+      expect(plateElement).toBeInTheDocument();
+    });
   });
 });

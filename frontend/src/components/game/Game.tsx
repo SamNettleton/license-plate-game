@@ -15,32 +15,66 @@ type Props = {
   solutionsCount: number;
   goalPoints: number;
   mode: GameMode;
+  isModalOpen: boolean;
 };
 
-function Game({ plate, goalPoints, mode }: Props) {
+function Game({ plate, goalPoints, mode, isModalOpen: isModalOpenProp = false }: Props) {
   const queryClient = useQueryClient();
-  const [state, dispatch] = React.useReducer(gameReducer, { mode }, () => createInitialState(mode));
+  const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
+  const isModalOpen = isModalOpenProp || isMobileResultsOpen;
+  const [state, dispatch] = React.useReducer(gameReducer, { mode, goalPoints }, () =>
+    createInitialState(mode, goalPoints),
+  );
 
   // Alert handling for displaying guess results
   const [showAlert, setShowAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
 
-  // Store active daily results for use in Header.tsx when sharing results.
   React.useEffect(() => {
-    if (mode === GameMode.DAILY) {
-      queryClient.setQueryData(['active-game-results'], {
-        points: state.points,
-        goalPoints,
-        plate,
-      });
+    queryClient.setQueryData(['active-game-tier-times'], {
+      elapsedSeconds: state.elapsedSeconds,
+      goalPoints,
+      plate,
+      points: state.points,
+      tierTimes: state.tierTimes,
+    });
+
+    return () => {
+      queryClient.removeQueries({ queryKey: ['active-game-tier-times'] });
+    };
+  }, [state.tierTimes, state.points, state.elapsedSeconds, goalPoints, plate, queryClient]);
+
+  // Timer Lifecycle: Handles tab switching, unmounting, and modal pauses
+  React.useEffect(() => {
+    const isPaused = isModalOpen || document.visibilityState === 'hidden';
+
+    if (isPaused) {
+      dispatch({ type: 'PAUSE_TIMER' });
+      return;
     }
 
-    // Cleanup: When the Game component unmounts
-    return () => {
-      queryClient.removeQueries({ queryKey: ['active-game-results'] });
+    dispatch({ type: 'START_TIMER' });
+
+    const tickInterval = setInterval(() => {
+      dispatch({ type: 'TICK_TIMER' });
+    }, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        dispatch({ type: 'PAUSE_TIMER' });
+      } else if (!isModalOpen) {
+        dispatch({ type: 'START_TIMER' });
+      }
     };
-  }, [state.points, goalPoints, plate]);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(tickInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      dispatch({ type: 'PAUSE_TIMER' });
+    };
+  }, [isModalOpen]);
 
   React.useEffect(() => {
     if (!state.lastFeedback) return;
@@ -48,7 +82,6 @@ function Game({ plate, goalPoints, mode }: Props) {
     const timer = setTimeout(() => {
       setShowAlert(false);
     }, 2000);
-    // Cleanup: If a NEW message comes in before 2s, reset the timer
     return () => clearTimeout(timer);
   }, [state.lastFeedback]);
 
@@ -70,6 +103,7 @@ function Game({ plate, goalPoints, mode }: Props) {
           feedback: result.message,
           points: result.points,
           mode: mode,
+          goalPoints: goalPoints,
         });
       } else {
         dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: result.message, feedbackType: 'info' });
