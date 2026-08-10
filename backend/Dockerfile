@@ -11,8 +11,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
+# Make the entrypoint script executable inside the container
+RUN chmod +x /app/entrypoint.sh
+
 # Expose the port FastAPI runs on
 EXPOSE 8000
+
+# Set entrypoint to run migrations prior to application startup
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Run the application using uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
