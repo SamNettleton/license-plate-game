@@ -15,6 +15,11 @@ vi.mock('@components', async (importOriginal) => {
   };
 });
 
+// Mock SettingsModal component
+vi.mock('@/components/modals/SettingsModal', () => ({
+  default: vi.fn(() => <div data-testid="mock-settings-modal" />),
+}));
+
 // Mock randomize utility
 vi.mock('@/utils/practiceRandomizer', () => ({
   hasPracticeProgress: vi.fn(),
@@ -187,46 +192,24 @@ describe('Header Component', () => {
     });
   });
 
-  describe('Theme Toggle', () => {
-    it('renders the theme toggle button', () => {
+  describe('Settings Button', () => {
+    it('renders the settings button', () => {
       renderHeader('/');
-      expect(screen.getByLabelText('toggle theme')).toBeInTheDocument();
+      expect(screen.getByLabelText('settings')).toBeInTheDocument();
     });
 
-    it('displays correct tooltip in dark mode', async () => {
+    it('displays settings tooltip', async () => {
       renderHeader('/');
-      const themeToggleBtn = screen.getByLabelText('toggle theme');
-      fireEvent.mouseOver(themeToggleBtn);
-      expect(await screen.findByRole('tooltip')).toHaveTextContent('Switch to light mode');
+      const settingsBtn = screen.getByLabelText('settings');
+      fireEvent.mouseOver(settingsBtn);
+      expect(await screen.findByRole('tooltip')).toHaveTextContent('Settings');
     });
 
-    it('displays correct tooltip in light mode', async () => {
-      (useColorScheme as any).mockReturnValue({
-        mode: 'light',
-        setMode: mockSetMode,
-      });
+    it('opens settings modal when clicked', () => {
       renderHeader('/');
-      const themeToggleBtn = screen.getByLabelText('toggle theme');
-      fireEvent.mouseOver(themeToggleBtn);
-      expect(await screen.findByRole('tooltip')).toHaveTextContent('Switch to dark mode');
-    });
-
-    it('calls setMode with light mode when clicked from dark mode', () => {
-      renderHeader('/');
-      const themeToggleBtn = screen.getByLabelText('toggle theme');
-      fireEvent.click(themeToggleBtn);
-      expect(mockSetMode).toHaveBeenCalledWith('light');
-    });
-
-    it('calls setMode with dark mode when clicked from light mode', () => {
-      (useColorScheme as any).mockReturnValue({
-        mode: 'light',
-        setMode: mockSetMode,
-      });
-      renderHeader('/');
-      const themeToggleBtn = screen.getByLabelText('toggle theme');
-      fireEvent.click(themeToggleBtn);
-      expect(mockSetMode).toHaveBeenCalledWith('dark');
+      const settingsBtn = screen.getByLabelText('settings');
+      fireEvent.click(settingsBtn);
+      expect(screen.getByTestId('mock-settings-modal')).toBeInTheDocument();
     });
   });
 });

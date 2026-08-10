@@ -2,15 +2,15 @@ import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, IconButton, Box, Tooltip, useColorScheme } from '@components';
 import {
-  LightModeIcon,
-  DarkModeIcon,
   HelpOutlineIcon as HelpIcon,
   BackIcon,
   RefreshIcon,
   BarChartIcon,
+  SettingsIcon,
 } from '@icons';
 import HowToPlayModal from '@/components/modals/HowToPlayModal';
 import ResultsModal from '@/components/modals/ResultsModal';
+import SettingsModal from '@/components/modals/SettingsModal';
 import ConfirmationDialog from '@/components/modals/ConfirmationDialog';
 import Logo from '@/components/Logo';
 import { resetPracticeGame, hasPracticeProgress } from '@/utils/practiceRandomizer';
@@ -22,8 +22,9 @@ type HeaderProps = {
 };
 
 export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
-  const { mode, setMode } = useColorScheme();
-  const [modalOpen, setModalOpen] = React.useState(false);
+  const { mode } = useColorScheme();
+  const [howToPlayModalOpen, setHowToPlayModalOpen] = React.useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,8 +64,6 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
   const executeRandomize = () => {
     resetPracticeGame(queryClient);
   };
-
-  if (!mode) return null;
 
   return (
     <AppBar position="static" color="transparent" elevation={0}>
@@ -128,24 +127,25 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
               aria-label="how to play"
               color="inherit"
               sx={iconButtonStyles}
-              onClick={() => setModalOpen(true)}
+              onClick={() => setHowToPlayModalOpen(true)}
             >
               <HelpIcon />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+          <Tooltip title="Settings">
             <IconButton
-              aria-label="toggle theme"
+              aria-label="settings"
               color="inherit"
               sx={iconButtonStyles}
-              onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
+              onClick={() => setSettingsModalOpen(true)}
             >
-              {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+              <SettingsIcon />
             </IconButton>
           </Tooltip>
         </Box>
-        <HowToPlayModal open={modalOpen} onClose={() => setModalOpen(false)} />
+        <HowToPlayModal open={howToPlayModalOpen} onClose={() => setHowToPlayModalOpen(false)} />
+        <SettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
         {(isDailyPage || isPracticePage) && (
           <ResultsModal
             elapsedSeconds={gameTierData?.elapsedSeconds ?? 0}
