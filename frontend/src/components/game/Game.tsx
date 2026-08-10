@@ -171,6 +171,7 @@ function Game({ plate, goalPoints, mode, isModalOpen }: Props) {
             plate={plate}
             guess={state.guess}
             isSubmitting={isSubmitting}
+            isModalOpen={isModalOpen}
             feedback={showAlert ? state.lastFeedback : null}
             onGuessChange={(val) => dispatch({ type: 'SET_GUESS', payload: val })}
             onGuessSubmit={checkGuess}

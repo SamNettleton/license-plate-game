@@ -10,3 +10,4 @@ export { default as DeleteIcon } from '@mui/icons-material/Backspace';
 export { default as ShareIcon } from '@mui/icons-material/Share';
 export { default as BarChartIcon } from '@mui/icons-material/BarChart';
 export { default as CloseIcon } from '@mui/icons-material/Close';
+export { default as SettingsIcon } from '@mui/icons-material/Settings';

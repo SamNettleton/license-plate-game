@@ -8,6 +8,7 @@ describe('PuzzleDisplay Component', () => {
     plate: 'LPG',
     guess: '',
     isSubmitting: false,
+    isModalOpen: false,
     feedback: null as GameFeedback | null,
     onGuessChange: vi.fn(),
     onGuessSubmit: vi.fn(),
@@ -112,6 +113,12 @@ describe('PuzzleDisplay Component', () => {
         render(<PuzzleDisplay {...defaultProps} guess="A" />);
         fireEvent.keyDown(window, { key: 'b' });
         expect(defaultProps.onGuessChange).toHaveBeenCalledWith('AB');
+      });
+
+      it('does not process game input when a modal is open', () => {
+        render(<PuzzleDisplay {...defaultProps} isModalOpen={true} guess="A" />);
+        fireEvent.keyDown(window, { key: 'b' });
+        expect(defaultProps.onGuessChange).not.toHaveBeenCalled();
       });
     });
   });

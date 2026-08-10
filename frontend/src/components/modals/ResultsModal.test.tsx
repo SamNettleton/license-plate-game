@@ -3,7 +3,6 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ResultsModal from './ResultsModal';
-import { ShowChart, ShowerSharp } from '@mui/icons-material';
 
 const defaultProps = {
   open: true,

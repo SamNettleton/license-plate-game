@@ -8,6 +8,7 @@ type Props = {
   plate: string;
   guess: string;
   isSubmitting: boolean;
+  isModalOpen: boolean;
   feedback: GameFeedback | null;
   onGuessChange: (val: string) => void;
   onGuessSubmit: () => void;
@@ -17,6 +18,7 @@ export default function PuzzleDisplay({
   plate,
   guess,
   isSubmitting,
+  isModalOpen,
   feedback,
   onGuessChange,
   onGuessSubmit,
@@ -35,7 +37,14 @@ export default function PuzzleDisplay({
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isSubmitting) return;
+      if (isSubmitting || isModalOpen) return;
+
+      if (e.target instanceof HTMLElement) {
+        const targetTag = e.target.tagName.toLowerCase();
+        if (targetTag === 'input' || targetTag === 'textarea' || e.target.isContentEditable) {
+          return;
+        }
+      }
 
       const isLetter = e.key.length === 1 && e.key.match(/[a-z]/i);
       const isBackspace = e.key === 'Backspace';
@@ -68,7 +77,7 @@ export default function PuzzleDisplay({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [guess, isSubmitting, onGuessChange, onGuessSubmit]);
+  }, [guess, isSubmitting, isModalOpen, onGuessChange, onGuessSubmit]);
 
   const handleChar = (char: string) => {
     onGuessChange(guess + char);

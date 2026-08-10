@@ -33,5 +33,7 @@ export { default as CircularProgress } from '@mui/material/CircularProgress';
 export { default as InputAdornment } from '@mui/material/InputAdornment';
 export { default as Snackbar } from '@mui/material/Snackbar';
 export { default as useMediaQuery } from '@mui/material/useMediaQuery';
+export { default as FormControlLabel } from '@mui/material/FormControlLabel';
+export { default as Switch } from '@mui/material/Switch';
 export { useTheme as useTheme } from '@mui/material';
 export type { SupportedColorScheme as Mode } from '@mui/material/styles';
