@@ -4,7 +4,8 @@ from schemas.words import WordCheckRequest, WordCheckResponse
 from services import dictionary
 from logic import game
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.metrics import GUESSES_COUNTER, DB_QUERY_TIME
+from app.metrics import GUESSES_COUNTER
+from db.models import PointTransaction
 
 router = APIRouter(prefix="/words", tags=["words"])
 
@@ -30,6 +31,17 @@ async def check_word(payload: WordCheckRequest, db: AsyncSession = Depends(get_d
 
     points = game.calculate_points_for_word(word)
     GUESSES_COUNTER.labels(status="valid", app_name="license-plate-backend").inc()
+
+    if payload.puzzle_date and payload.user_id:
+        transaction = PointTransaction(
+            user_id=payload.user_id,
+            points=points,
+            word=word,
+            puzzle_date=payload.puzzle_date
+        )
+        db.add(transaction)
+        await db.commit()
+
     return {
         "is_valid": True,  
         "message": f"Nice one! +{points}",

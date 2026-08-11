@@ -5,9 +5,14 @@ import { GameMode } from '@/constants/game';
 import { Box, Fade } from '@components';
 import LoadingDisplay from '@/components/feedback/LoadingDisplay';
 import ErrorDisplay from '@/components/feedback/ErrorDisplay';
+import { useSettings } from '@/context/SettingsContext';
+import { getLocalDailyDate } from '@/utils/date';
 
 function Daily({ resultsOpen }: { resultsOpen: boolean }) {
-  const today = new Date().toISOString().split('T')[0];
+  const { settings } = useSettings();
+  const playerId = settings.playerId;
+
+  const today = getLocalDailyDate();
 
   const {
     data: challenge,
@@ -35,7 +40,9 @@ function Daily({ resultsOpen }: { resultsOpen: boolean }) {
           goalPoints={challenge.goalPoints}
           mode={GameMode.DAILY}
           isModalOpen={resultsOpen}
-        ></Game>
+          puzzleDate={today}
+          userId={playerId}
+        />
       </Box>
     </Fade>
   );

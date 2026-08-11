@@ -7,7 +7,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
 
 // Mock wordService API calls
-vi.mock('@/api/wordService');
+vi.mock('@/api/wordService', () => ({
+  checkWordValidity: vi.fn(),
+}));
 
 // Mock Grafana Faro telemetry import
 vi.mock('@/App', () => ({
@@ -23,16 +25,13 @@ describe('Game Component', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    localStorage.clear();
     vi.clearAllMocks();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
       },
     });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   describe('Initial Render', () => {
@@ -88,6 +87,41 @@ describe('Game Component', () => {
       await waitFor(() => {
         const elements = screen.getAllByText(/10.*\/.*100/i);
         expect(elements[0]).toBeInTheDocument();
+      });
+    });
+
+    it('forwards userId and puzzleDate to the API in daily mode', async () => {
+      vi.mocked(wordService.checkWordValidity).mockResolvedValue({
+        is_valid: true,
+        points: 10,
+        message: 'Great job!',
+      });
+
+      const user = userEvent.setup();
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game
+            plate="LPG"
+            solutionsCount={10}
+            goalPoints={100}
+            mode={GameMode.DAILY}
+            isModalOpen={false}
+            puzzleDate="2026-08-11"
+            userId="test-user-id"
+          />
+        </QueryClientProvider>,
+      );
+
+      await user.keyboard('LEAPFROG{Enter}');
+
+      await waitFor(() => {
+        expect(wordService.checkWordValidity).toHaveBeenCalledWith(
+          'leapfrog',
+          'LPG',
+          'test-user-id',
+          '2026-08-11',
+        );
       });
     });
 
