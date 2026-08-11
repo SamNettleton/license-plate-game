@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AppBar, Toolbar, IconButton, Box, Tooltip, useColorScheme } from '@components';
+import { AppBar, Toolbar, IconButton, Box, Tooltip } from '@components';
 import {
   HelpOutlineIcon as HelpIcon,
   BackIcon,
@@ -22,7 +22,6 @@ type HeaderProps = {
 };
 
 export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
-  const { mode } = useColorScheme();
   const [howToPlayModalOpen, setHowToPlayModalOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);

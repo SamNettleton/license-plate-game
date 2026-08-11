@@ -17,7 +17,8 @@ import {
 } from '@components';
 import type { TransitionProps } from '@mui/material/transitions';
 import { CloseIcon } from '@icons';
-import { useSettings } from '@/hooks/useSettings';
+import { useSettings } from '@/context/SettingsContext';
+import { syncUser } from '@/api/userService';
 
 type Props = {
   open: boolean;
@@ -52,9 +53,7 @@ export default function SettingsModal({ open, maxDisplayNameLength = 20, onClose
   };
 
   const handleClose = () => {
-    const sanitized = displayName.trim() || 'Anonymous Traveler';
-    setDisplayName(sanitized);
-    updateSettings({ displayName: sanitized });
+    handleBlur();
     onClose();
   };
 

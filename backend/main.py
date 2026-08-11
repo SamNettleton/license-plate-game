@@ -5,6 +5,7 @@ from app.metrics import GUESSES_COUNTER, DB_QUERY_TIME # Ensure these are initia
 from dotenv import load_dotenv
 
 from router import plate
+from router import users
 from router import words
 from router import system
 
@@ -27,8 +28,9 @@ app.add_middleware(
 )
 
 app.include_router(plate.router, prefix="/api")
-app.include_router(words.router, prefix="/api")
 app.include_router(system.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
+app.include_router(words.router, prefix="/api")
 
 # unmask_url=True ensures that /api/plate/ABC and /api/plate/XYZ 
 # are grouped together in metrics rather than creating thousands of separate entries.
