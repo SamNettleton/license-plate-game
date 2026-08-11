@@ -18,7 +18,6 @@ import {
 import type { TransitionProps } from '@mui/material/transitions';
 import { CloseIcon } from '@icons';
 import { useSettings } from '@/context/SettingsContext';
-import { syncUser } from '@/api/userService';
 
 type Props = {
   open: boolean;

@@ -4,12 +4,21 @@ import Daily from './Daily';
 import * as plateService from '../api/plateService';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Mock plateService API
 vi.mock('../api/plateService', () => ({
   fetchDailyPlate: vi.fn(),
 }));
 
-// Mock Grafana Faro telemetry consumed by underlying Game component
+vi.mock('@/context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      playerId: 'test-player-123',
+      displayName: 'Test Traveler',
+      isDarkTheme: true,
+    },
+    updateSettings: vi.fn(),
+  }),
+}));
+
 vi.mock('@/App', () => ({
   faro: {
     api: {

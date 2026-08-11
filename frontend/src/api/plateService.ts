@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getLocalDailyDate } from '@/utils/date';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -39,13 +40,4 @@ export const fetchDailyPlate = async (): Promise<PlateChallenge> => {
     solutionsCount: data.total_count,
     goalPoints: data.goal_points,
   };
-};
-
-// Get local date in YYYY-MM-DD format without timezone shifting issues
-const getLocalDailyDate = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 };

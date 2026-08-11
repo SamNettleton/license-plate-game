@@ -26,8 +26,38 @@ describe('checkWordValidity', () => {
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word: 'leapfrog', sequence: 'lpg' }),
-      })
+        body: JSON.stringify({
+          word: 'leapfrog',
+          sequence: 'lpg',
+        }),
+      }),
+    );
+    expect(result).toEqual(mockResponse);
+  });
+
+  it('includes user_id and puzzle_date when provided', async () => {
+    const mockResponse = { is_valid: true, message: 'Nice one! +13', points: 13 };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    });
+
+    const result = await checkWordValidity('leapfrog', 'lpg', 'user-123', '2026-08-11');
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/words/check'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          word: 'leapfrog',
+          sequence: 'lpg',
+          user_id: 'user-123',
+          puzzle_date: '2026-08-11',
+        }),
+      }),
     );
     expect(result).toEqual(mockResponse);
   });

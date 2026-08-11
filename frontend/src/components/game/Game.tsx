@@ -24,9 +24,11 @@ type Props = {
   goalPoints: number;
   mode: GameMode;
   isModalOpen: boolean;
+  puzzleDate?: string; // Optional, only for daily mode
+  userId?: string; // Optional, only for daily mode
 };
 
-function Game({ plate, goalPoints, mode, isModalOpen }: Props) {
+function Game({ plate, goalPoints, mode, isModalOpen, puzzleDate, userId }: Props) {
   const queryClient = useQueryClient();
   const [state, dispatch] = React.useReducer(gameReducer, mode, createInitialState);
 
@@ -112,7 +114,14 @@ function Game({ plate, goalPoints, mode, isModalOpen }: Props) {
       return;
     }
     try {
-      const result = await checkWordValidity(lowercaseGuess, plate);
+      const isDaily = mode === GameMode.DAILY;
+
+      // Use the fixed puzzleDate prop for daily mode, or null for practice
+      const activePuzzleDate = isDaily ? puzzleDate : undefined;
+      const activeUserId = isDaily ? userId : undefined;
+
+      const result = await checkWordValidity(lowercaseGuess, plate, activeUserId, activePuzzleDate);
+
       if (result.is_valid) {
         dispatch({
           type: 'ADD_SOLUTION',
