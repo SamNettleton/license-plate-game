@@ -11,6 +11,7 @@ import About from '@/pages/About';
 import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
 import Header from './components/Header';
+import { SettingsProvider } from '@/context/SettingsContext';
 
 export const faro = initializeFaro({
   url: import.meta.env.VITE_FARO_URL || '',
@@ -34,9 +35,11 @@ function App() {
   return (
     <ThemeProvider theme={theme} defaultMode="dark">
       <CssBaseline />
-      <QueryClientProvider client={queryClient}>
-        <AppContent resultsOpen={resultsOpen} setResultsOpen={setResultsOpen} />
-      </QueryClientProvider>
+      <SettingsProvider>
+        <QueryClientProvider client={queryClient}>
+          <AppContent resultsOpen={resultsOpen} setResultsOpen={setResultsOpen} />
+        </QueryClientProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }

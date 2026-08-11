@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SettingsModal from './SettingsModal';
-import { useSettings } from '@/hooks/useSettings';
+import { useSettings } from '@/context/SettingsContext';
 
-vi.mock('@/hooks/useSettings', () => ({
+vi.mock('@/context/SettingsContext', () => ({
   useSettings: vi.fn(),
 }));
 
@@ -28,6 +28,7 @@ describe('SettingsModal Component', () => {
     vi.clearAllMocks();
     (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
       settings: {
+        playerId: 'mock-uuid-1234',
         displayName: 'Road Tripper',
         isDarkTheme: true,
       },
@@ -102,7 +103,7 @@ describe('SettingsModal Component', () => {
 
       it('does not display the character counter when below the threshold', () => {
         (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
-          settings: { displayName: 'Short', isDarkTheme: true },
+          settings: { playerId: 'mock-uuid-1234', displayName: 'Short', isDarkTheme: true },
           updateSettings: mockUpdateSettings,
         });
 
@@ -113,7 +114,11 @@ describe('SettingsModal Component', () => {
       it('displays the character counter when reaching or exceeding the threshold', () => {
         const fifteenChars = '123456789012345';
         (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
-          settings: { displayName: fifteenChars, isDarkTheme: true },
+          settings: {
+            playerId: 'mock-uuid-1234',
+            displayName: fifteenChars,
+            isDarkTheme: true,
+          },
           updateSettings: mockUpdateSettings,
         });
 
