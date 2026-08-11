@@ -1,4 +1,3 @@
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -8,21 +7,20 @@ from config import settings
 from database import Base, get_db
 from main import app
 
-import db.models as models
+# Import all models so Base.metadata is populated before create_all runs
+import db.models  # noqa: F401
 
-@pytest.fixture(scope="session")
-def event_loop():
-    import asyncio
-
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 @pytest_asyncio.fixture(scope="session")
 async def test_engine():
-    engine = create_async_engine(settings.database_url, poolclass=NullPool)
+    """
+    Creates all database tables at the start of the test session
+    and drops them after all tests complete.
+    """
+    engine = create_async_engine(settings.test_database_url, poolclass=NullPool)
 
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine
@@ -36,13 +34,17 @@ async def test_engine():
 @pytest_asyncio.fixture
 async def db(test_engine):
     """
-    Creates an isolated database transaction per test using NullPool.
-    Rolls back automatically when the test finishes.
+    Creates an isolated database transaction per test using savepoints.
+    Rolls back automatically when the test finishes, even if an endpoint calls commit().
     """
     connection = await test_engine.connect()
     transaction = await connection.begin()
 
-    session = AsyncSession(bind=connection, expire_on_commit=False)
+    session = AsyncSession(
+        bind=connection,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
 
     yield session
 
@@ -54,7 +56,7 @@ async def db(test_engine):
 @pytest_asyncio.fixture
 async def client(db: AsyncSession):
     """
-    HTTP client overriding FastAPI's get_db dependency with the test transaction.
+    HTTP client overriding FastAPI's get_db dependency with the test database session.
     """
 
     async def _override_get_db():

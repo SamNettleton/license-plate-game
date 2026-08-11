@@ -1,9 +1,7 @@
+from database import Base
 from sqlalchemy import Column, ForeignKey, Index, String, Integer, DateTime, Date, PrimaryKeyConstraint, func
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.dialects.postgresql import ARRAY
-
-class Base(DeclarativeBase):
-    pass
 
 class Dictionary(Base):
     __tablename__ = "dictionary"
