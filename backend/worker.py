@@ -70,16 +70,19 @@ async def run_initial_backfill():
             logger.error(f"Error during initial backfill: {e}", exc_info=True)
 
 
-if __name__ == "__main__":
+async def main():
     logger.info("Starting APScheduler worker...")
-    loop = asyncio.get_event_loop()
-
-    # Run the initial catch-up sync until complete
-    loop.run_until_complete(run_initial_backfill())
-
-    # Start the scheduler for ongoing hourly runs
     scheduler.start()
+
+    # Run the initial catch-up sync
+    await run_initial_backfill()
+
+    # Keep the worker process running indefinitely for scheduled jobs
     try:
-        loop.run_forever()
+        await asyncio.Event().wait()
     except (KeyboardInterrupt, SystemExit):
         logger.info("Worker stopped.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
