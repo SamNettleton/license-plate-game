@@ -7,15 +7,13 @@ from config import settings
 from database import Base, get_db
 from main import app
 
-# Import all models so Base.metadata is populated before create_all runs
 import db.models  # noqa: F401
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def test_engine():
     """
-    Creates all database tables at the start of the test session
-    and drops them after all tests complete.
+    Creates fresh database tables per test on the test's event loop.
     """
     engine = create_async_engine(settings.test_database_url, poolclass=NullPool)
 
@@ -34,8 +32,7 @@ async def test_engine():
 @pytest_asyncio.fixture
 async def db(test_engine):
     """
-    Creates an isolated database transaction per test using savepoints.
-    Rolls back automatically when the test finishes, even if an endpoint calls commit().
+    Provides an isolated database transaction per test function.
     """
     connection = await test_engine.connect()
     transaction = await connection.begin()
@@ -49,14 +46,15 @@ async def db(test_engine):
     yield session
 
     await session.close()
-    await transaction.rollback()
+    if transaction.is_active:
+        await transaction.rollback()
     await connection.close()
 
 
 @pytest_asyncio.fixture
 async def client(db: AsyncSession):
     """
-    HTTP client overriding FastAPI's get_db dependency with the test database session.
+    Async HTTP client overriding get_db dependency.
     """
 
     async def _override_get_db():

@@ -37,8 +37,8 @@ class DailyUserSummary(Base):
     date = Column(Date, nullable=False)
     points_earned = Column(Integer, nullable=False, default=0)
     words_found = Column(ARRAY(String), nullable=False, default=list)
-    rank = Column(Integer, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint("user_id", "date"),
+        Index("ix_daily_summaries_date_points", "date", points_earned.desc()),
     )

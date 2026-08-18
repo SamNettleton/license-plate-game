@@ -4,28 +4,14 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Box, ThemeProvider, useColorScheme, CssBaseline } from '@components';
 import { theme } from './material-ui/Theme';
-import { initializeFaro, getWebInstrumentations } from '@grafana/faro-web-sdk';
 
 import Home from '@/pages/Home';
 import About from '@/pages/About';
 import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
+import Leaderboard from '@/pages/Leaderboard';
 import Header from './components/Header';
 import { SettingsProvider } from '@/context/SettingsContext';
-
-export const faro = initializeFaro({
-  url: import.meta.env.VITE_FARO_URL || '',
-  app: {
-    name: 'license-plate-frontend',
-    version: '1.0.0',
-    environment: import.meta.env.VITE_ENVIRONMENT || 'development',
-  },
-  instrumentations: [
-    ...getWebInstrumentations({
-      captureConsole: true,
-    }),
-  ],
-});
 
 const queryClient = new QueryClient();
 
@@ -73,6 +59,7 @@ function AppContent({
             <Route path="/about" element={<About />} />
             <Route path="/daily" element={<Daily resultsOpen={resultsOpen} />} />
             <Route path="/practice" element={<Practice resultsOpen={resultsOpen} />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
           </Routes>
         </Box>
       </Box>
