@@ -124,6 +124,35 @@ describe('Leaderboard Component', () => {
     });
   });
 
+  describe('Refresh Action', () => {
+    it('triggers fetchDailyLeaderboard when refresh button is clicked', async () => {
+      renderLeaderboard();
+      await screen.findByText('Top Player');
+
+      const refreshButton = screen.getByRole('button', { name: /refresh leaderboard/i });
+      expect(refreshButton).not.toBeDisabled();
+
+      fireEvent.click(refreshButton);
+
+      expect(fetchDailyLeaderboard).toHaveBeenCalledTimes(2);
+    });
+
+    it('disables refresh button while query is fetching', async () => {
+      renderLeaderboard();
+      await screen.findByText('Top Player');
+
+      // Return a pending promise to simulate an in-flight network request
+      vi.mocked(fetchDailyLeaderboard).mockReturnValueOnce(new Promise(() => {}));
+
+      const refreshButton = screen.getByRole('button', { name: /refresh leaderboard/i });
+      fireEvent.click(refreshButton);
+
+      await waitFor(() => {
+        expect(refreshButton).toBeDisabled();
+      });
+    });
+  });
+
   describe('Sticky Bottom Rank Card (Outside Top 10)', () => {
     it('renders separate current user entry sticky card when provided', async () => {
       vi.mocked(fetchDailyLeaderboard).mockResolvedValueOnce({

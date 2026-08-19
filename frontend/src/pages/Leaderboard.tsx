@@ -15,6 +15,7 @@ import {
   ArrowBackIosNew as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon,
   CalendarMonth as CalendarIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { formatDateKey, toDateOnly, addDays, getLatestActiveGlobalDate } from '@/utils/date';
 import { EARLIEST_ACTIVE_DATE } from '@/constants/date';
@@ -70,6 +71,7 @@ function Leaderboard() {
   const {
     data: leaderboard = { entries: [], currentUser: undefined },
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery<LeaderboardResponse>({
@@ -107,11 +109,31 @@ function Leaderboard() {
               Leaderboard
             </Typography>
 
-            {!isDesktop && (
-              <IconButton aria-label="pick date" color="primary" onClick={handleOpenCalendar}>
-                <CalendarIcon />
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <IconButton
+                aria-label="refresh leaderboard"
+                onClick={() => void refetch()}
+                disabled={isLoading || isFetching}
+                size="small"
+              >
+                <RefreshIcon
+                  fontSize="small"
+                  sx={{
+                    animation: isFetching ? 'spin 1s linear infinite' : 'none',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' },
+                    },
+                  }}
+                />
               </IconButton>
-            )}
+
+              {!isDesktop && (
+                <IconButton aria-label="pick date" color="primary" onClick={handleOpenCalendar}>
+                  <CalendarIcon />
+                </IconButton>
+              )}
+            </Stack>
           </Stack>
 
           {/* Date Selector Row */}
