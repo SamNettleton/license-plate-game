@@ -7,10 +7,10 @@ import time
 router = APIRouter(prefix="/system", tags=["system"])
 
 @router.get("/health")
-def health_check(db: Session = Depends(get_db)):
+async def health_check(db: Session = Depends(get_db)):
     try:
         start_time = time.time()
-        db.execute(text("SELECT 1"))
+        await db.execute(text("SELECT 1"))
         latency = (time.time() - start_time) * 1000
         
         return {

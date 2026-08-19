@@ -6,6 +6,16 @@ import Header from './Header';
 import { useColorScheme } from '@components';
 import { hasPracticeProgress, resetPracticeGame } from '@/utils/practiceRandomizer';
 
+// Mock react-router-dom navigate
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as Record<string, any>),
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // Mock components and color scheme
 vi.mock('@components', async (importOriginal) => {
   const actual = await importOriginal();
@@ -80,12 +90,38 @@ describe('Header Component', () => {
   describe('Navigation & Back Button', () => {
     it('does NOT render back button on the homepage', () => {
       renderHeader('/');
-      expect(screen.queryByLabelText('back to home')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('back')).not.toBeInTheDocument();
     });
 
     it('renders back button on non-home pages', () => {
       renderHeader('/daily');
-      expect(screen.getByLabelText('back to home')).toBeInTheDocument();
+      expect(screen.getByLabelText('back')).toBeInTheDocument();
+    });
+
+    it('navigates to homepage when back button is clicked without previous state', () => {
+      renderHeader('/daily');
+      fireEvent.click(screen.getByLabelText('back'));
+      expect(mockNavigate).toHaveBeenCalledWith('/');
+    });
+  });
+
+  describe('Leaderboard Button', () => {
+    it('renders leaderboard button on standard pages', () => {
+      renderHeader('/');
+      expect(screen.getByLabelText('leaderboard')).toBeInTheDocument();
+    });
+
+    it('does NOT render leaderboard button on the leaderboard page', () => {
+      renderHeader('/leaderboard');
+      expect(screen.queryByLabelText('leaderboard')).not.toBeInTheDocument();
+    });
+
+    it('navigates to leaderboard passing the current pathname in state when clicked', () => {
+      renderHeader('/daily');
+      fireEvent.click(screen.getByLabelText('leaderboard'));
+      expect(mockNavigate).toHaveBeenCalledWith('/leaderboard', {
+        state: { from: '/daily' },
+      });
     });
   });
 
@@ -170,6 +206,16 @@ describe('Header Component', () => {
   });
 
   describe('Tutorial Modal', () => {
+    it('renders how to play button on standard pages', () => {
+      renderHeader('/');
+      expect(screen.getByLabelText('how to play')).toBeInTheDocument();
+    });
+
+    it('does NOT render how to play button on leaderboard page', () => {
+      renderHeader('/leaderboard');
+      expect(screen.queryByLabelText('how to play')).not.toBeInTheDocument();
+    });
+
     it('does not render the tutorial modal by default', () => {
       renderHeader('/');
       expect(
@@ -193,8 +239,12 @@ describe('Header Component', () => {
   });
 
   describe('Settings Button', () => {
-    it('renders the settings button', () => {
-      renderHeader('/');
+    it('renders the settings button on all pages', () => {
+      const { unmount } = renderHeader('/');
+      expect(screen.getByLabelText('settings')).toBeInTheDocument();
+      unmount();
+
+      renderHeader('/leaderboard');
       expect(screen.getByLabelText('settings')).toBeInTheDocument();
     });
 

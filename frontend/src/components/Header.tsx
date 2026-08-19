@@ -7,6 +7,7 @@ import {
   RefreshIcon,
   BarChartIcon,
   SettingsIcon,
+  TrophyIcon,
 } from '@icons';
 import HowToPlayModal from '@/components/modals/HowToPlayModal';
 import ResultsModal from '@/components/modals/ResultsModal';
@@ -14,7 +15,7 @@ import SettingsModal from '@/components/modals/SettingsModal';
 import ConfirmationDialog from '@/components/modals/ConfirmationDialog';
 import Logo from '@/components/Logo';
 import { resetPracticeGame, hasPracticeProgress } from '@/utils/practiceRandomizer';
-import { useQueryClient } from '@tanstack/react-query';
+import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 
 type HeaderProps = {
   resultsOpen: boolean;
@@ -32,6 +33,7 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
   const isHomePage = location.pathname === '/';
   const isDailyPage = location.pathname === '/daily';
   const isPracticePage = location.pathname === '/practice';
+  const isLeaderboardPage = location.pathname === '/leaderboard';
 
   type ActiveGameTierData = {
     elapsedSeconds: number;
@@ -41,16 +43,18 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
     tierTimes: Record<string, number>;
   };
 
-  const [gameTierData, setGameTierData] = React.useState<ActiveGameTierData | undefined>(
-    queryClient.getQueryData<ActiveGameTierData>(['active-game-tier-times']),
-  );
+  const DEFAULT_GAME_TIER_DATA: ActiveGameTierData = {
+    elapsedSeconds: 0,
+    goalPoints: 0,
+    plate: '',
+    points: 0,
+    tierTimes: {},
+  };
 
-  React.useEffect(() => {
-    const unsubscribe = queryClient.getQueryCache().subscribe(() => {
-      setGameTierData(queryClient.getQueryData<ActiveGameTierData>(['active-game-tier-times']));
-    });
-    return unsubscribe;
-  }, [queryClient]);
+  const { data: gameTierData = DEFAULT_GAME_TIER_DATA } = useQuery<ActiveGameTierData>({
+    queryKey: ['active-game-tier-times'],
+    queryFn: skipToken,
+  });
 
   const handleRandomizeClick = () => {
     if (hasPracticeProgress()) {
@@ -62,6 +66,20 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
 
   const executeRandomize = () => {
     resetPracticeGame(queryClient);
+  };
+
+  const previousPath = (location.state as { from?: string } | null)?.from;
+
+  const handleBackClick = () => {
+    if (previousPath) {
+      navigate(previousPath);
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handleLeaderboardClick = () => {
+    navigate('/leaderboard', { state: { from: location.pathname } });
   };
 
   return (
@@ -78,13 +96,13 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
       <Toolbar sx={toolbarStyles}>
         <Box sx={{ minWidth: 48, gap: 1, display: 'flex' }}>
           {!isHomePage && (
-            <Tooltip title="Back to home">
+            <Tooltip title={previousPath ? 'Back' : 'Back to home'}>
               <IconButton
-                aria-label="back to home"
+                aria-label="back"
                 color="inherit"
                 edge="start"
                 sx={iconButtonStyles}
-                onClick={() => navigate('/')}
+                onClick={handleBackClick}
               >
                 <BackIcon sx={{ fontSize: '1.2rem' }} />
               </IconButton>
@@ -107,7 +125,20 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
 
         <Box sx={logoStyles}>{isHomePage && <Logo />}</Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.25, sm: 1 } }}>
+          {!isLeaderboardPage && (
+            <Tooltip title="Leaderboard">
+              <IconButton
+                aria-label="leaderboard"
+                color="inherit"
+                sx={iconButtonStyles}
+                onClick={handleLeaderboardClick}
+              >
+                <TrophyIcon sx={{ fontSize: '1.3rem' }} />
+              </IconButton>
+            </Tooltip>
+          )}
+
           {(isDailyPage || isPracticePage) && (
             <Tooltip title="View stats">
               <IconButton
@@ -121,16 +152,18 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
             </Tooltip>
           )}
 
-          <Tooltip title="How to play">
-            <IconButton
-              aria-label="how to play"
-              color="inherit"
-              sx={iconButtonStyles}
-              onClick={() => setHowToPlayModalOpen(true)}
-            >
-              <HelpIcon />
-            </IconButton>
-          </Tooltip>
+          {!isLeaderboardPage && (
+            <Tooltip title="How to play">
+              <IconButton
+                aria-label="how to play"
+                color="inherit"
+                sx={iconButtonStyles}
+                onClick={() => setHowToPlayModalOpen(true)}
+              >
+                <HelpIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
           <Tooltip title="Settings">
             <IconButton
@@ -174,6 +207,7 @@ const toolbarStyles = {
 };
 
 const iconButtonStyles = {
+  p: { xs: 0.75, sm: 1 },
   '@media (max-height: 600px)': {
     padding: '4px',
     '& .MuiSvgIcon-root': {
@@ -188,8 +222,13 @@ const logoStyles = {
   transform: 'translateX(-50%)',
   zIndex: 1,
   display: 'flex',
-
-  '@media (max-height: 600px), (max-width: 360px)': {
-    transform: 'translateX(-50%) scale(0.8)',
+  sx: {
+    transform: {
+      xs: 'translateX(-50%) scale(0.8)',
+      sm: 'translateX(-50%) scale(1)',
+    },
+  },
+  '@media (max-height: 600px), (max-width: 380px)': {
+    transform: 'translateX(-50%) scale(0.7)',
   },
 };
