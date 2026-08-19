@@ -6,27 +6,65 @@ const api = axios.create({
   baseURL: BASE_URL,
 });
 
-export type LeaderboardEntry = {
+export interface RawLeaderboardEntry {
+  rank?: number;
+  name?: string;
+  score?: number;
+  words_found_count?: number;
+  user_id?: string;
+  is_current_user?: boolean;
+}
+
+export interface RawLeaderboardResponse {
+  date: string;
+  entries: RawLeaderboardEntry[];
+  current_user?: RawLeaderboardEntry;
+}
+
+export interface LeaderboardEntry {
   rank: number;
   name: string;
   score: number;
-  solvedWords: number;
+  wordsFoundCount: number;
   userId?: string;
-  isCurrentUser?: boolean;
-};
+  isCurrentUser: boolean;
+}
 
-export type LeaderboardResponse = {
+export interface LeaderboardResponse {
   date: string;
   entries: LeaderboardEntry[];
   currentUser?: LeaderboardEntry;
-};
+}
+
+export function normalizeLeaderboardEntry(
+  rawEntry: RawLeaderboardEntry,
+  currentUserId?: string,
+): LeaderboardEntry {
+  const {
+    user_id: userId,
+    name = 'Unknown Player',
+    rank = 0,
+    score = 0,
+    words_found_count: wordsFoundCount = 0,
+    is_current_user: isCurrentUser,
+  } = rawEntry;
+
+  return {
+    userId,
+    name,
+    rank,
+    score,
+    wordsFoundCount,
+    isCurrentUser: isCurrentUser ?? (Boolean(currentUserId) && currentUserId === userId),
+  };
+}
 
 export const fetchDailyLeaderboard = async (
   date: string,
   userId?: string,
   limit = 10,
 ): Promise<LeaderboardResponse> => {
-  const { data } = await api.get('/leaderboard/daily', {
+  const { data } = await api.get<RawLeaderboardResponse>('/leaderboard/daily', {
     params: {
       date,
       user_id: userId,
@@ -36,23 +74,9 @@ export const fetchDailyLeaderboard = async (
 
   return {
     date: data.date,
-    entries: (data.entries ?? []).map((entry: any) => ({
-      rank: entry.rank,
-      name: entry.name,
-      score: entry.score ?? entry.points_earned ?? 0,
-      solvedWords: entry.solved_words ?? entry.solvedWords ?? 0,
-      userId: entry.user_id ?? entry.userId,
-      isCurrentUser: Boolean(entry.is_current_user ?? entry.isCurrentUser),
-    })),
+    entries: (data.entries ?? []).map((entry) => normalizeLeaderboardEntry(entry, userId)),
     currentUser: data.current_user
-      ? {
-          rank: data.current_user.rank,
-          name: data.current_user.name,
-          score: data.current_user.score ?? 0,
-          solvedWords: data.current_user.solved_words ?? 0,
-          userId: data.current_user.user_id,
-          isCurrentUser: true,
-        }
+      ? normalizeLeaderboardEntry(data.current_user, userId)
       : undefined,
   };
 };

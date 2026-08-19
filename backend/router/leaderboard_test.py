@@ -64,11 +64,11 @@ async def test_get_daily_leaderboard_historical_summary(client, db):
     assert len(payload["entries"]) == 2
     assert payload["entries"][0]["name"] == "Bravo"
     assert payload["entries"][0]["score"] == 1500
-    assert payload["entries"][0]["solved_words"] == 3
+    assert payload["entries"][0]["words_found_count"] == 3
     assert payload["entries"][0]["is_current_user"] is False
     assert payload["entries"][1]["name"] == "Alpha"
     assert payload["entries"][1]["score"] == 900
-    assert payload["entries"][1]["solved_words"] == 2
+    assert payload["entries"][1]["words_found_count"] == 2
     assert payload["entries"][1]["is_current_user"] is True
     assert payload["current_user"] is None
 
@@ -123,10 +123,10 @@ async def test_get_daily_leaderboard_live_transactions(client, db):
     assert len(payload["entries"]) == 2
     assert payload["entries"][0]["name"] == "Steady"
     assert payload["entries"][0]["score"] == 500
-    assert payload["entries"][0]["solved_words"] == 1
+    assert payload["entries"][0]["words_found_count"] == 1
     assert payload["entries"][1]["name"] == "Speedy"
     assert payload["entries"][1]["score"] == 250
-    assert payload["entries"][1]["solved_words"] == 2
+    assert payload["entries"][1]["words_found_count"] == 2
     assert payload["entries"][1]["is_current_user"] is True
 
 

@@ -90,7 +90,7 @@ async def get_daily_leaderboard(
                 "name": display_name,
                 "user_id": current_user_id,
                 "score": int(row["points_earned"]),
-                "solved_words": int(row["words_found_count"]),
+                "words_found_count": int(row["words_found_count"]),
                 "is_current_user": bool(user_id and current_user_id == user_id),
             }
         )
@@ -110,7 +110,7 @@ async def get_daily_leaderboard(
                 "name": display_name,
                 "user_id": user_id,
                 "score": int(current_user_row["points_earned"]),
-                "solved_words": int(current_user_row["words_found_count"]),
+                "words_found_count": int(current_user_row["words_found_count"]),
                 "is_current_user": True,
             }
 

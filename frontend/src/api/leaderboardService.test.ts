@@ -70,7 +70,7 @@ describe('fetchDailyLeaderboard', () => {
           rank: 1,
           name: 'Top Player',
           score: 1200,
-          solved_words: 15,
+          words_found_count: 15,
           user_id: 'user-top',
           is_current_user: false,
         },
@@ -79,7 +79,7 @@ describe('fetchDailyLeaderboard', () => {
         rank: 14,
         name: 'Outside Player',
         score: 450,
-        solved_words: 5,
+        words_found_count: 5,
         user_id: 'user-me',
       },
     };
@@ -95,7 +95,7 @@ describe('fetchDailyLeaderboard', () => {
           rank: 1,
           name: 'Top Player',
           score: 1200,
-          solvedWords: 15,
+          wordsFoundCount: 15,
           userId: 'user-top',
           isCurrentUser: false,
         },
@@ -104,30 +104,30 @@ describe('fetchDailyLeaderboard', () => {
         rank: 14,
         name: 'Outside Player',
         score: 450,
-        solvedWords: 5,
+        wordsFoundCount: 5,
         userId: 'user-me',
         isCurrentUser: true,
       },
     });
   });
 
-  it('handles field name fallbacks and missing entries gracefully', async () => {
-    const mockApiResponseWithFallbacks = {
+  it('handles missing optional fields gracefully', async () => {
+    const mockApiResponse = {
       date: '2026-08-18',
       entries: [
         {
           rank: 2,
           name: 'Alternative Schema Player',
-          points_earned: 800,
-          solvedWords: 8,
-          userId: 'user-alt',
-          isCurrentUser: true,
+          score: 800,
+          words_found_count: 8,
+          user_id: 'user-alt',
+          is_current_user: true,
         },
       ],
       current_user: null,
     };
 
-    mockGet.mockResolvedValueOnce({ data: mockApiResponseWithFallbacks });
+    mockGet.mockResolvedValueOnce({ data: mockApiResponse });
 
     const result = await fetchDailyLeaderboard('2026-08-18');
 
@@ -135,7 +135,7 @@ describe('fetchDailyLeaderboard', () => {
       rank: 2,
       name: 'Alternative Schema Player',
       score: 800,
-      solvedWords: 8,
+      wordsFoundCount: 8,
       userId: 'user-alt',
       isCurrentUser: true,
     });

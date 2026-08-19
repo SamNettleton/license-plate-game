@@ -16,17 +16,12 @@ import {
   ArrowForwardIos as ArrowForwardIcon,
   CalendarMonth as CalendarIcon,
 } from '@mui/icons-material';
-import {
-  formatDateKey,
-  toDateOnly,
-  addDays,
-  startOfMonth,
-  daysInMonth,
-  getLatestActiveGlobalDate,
-} from '@/utils/date';
+import { formatDateKey, toDateOnly, addDays, getLatestActiveGlobalDate } from '@/utils/date';
 import { EARLIEST_ACTIVE_DATE } from '@/constants/date';
 import { useSettings } from '@/context/SettingsContext';
 import { fetchDailyLeaderboard, type LeaderboardResponse } from '@/api/leaderboardService';
+import { Calendar } from '@/components/common/Calendar';
+import LoadingDisplay from '@/components/feedback/LoadingDisplay';
 
 function Leaderboard() {
   const theme = useTheme();
@@ -44,7 +39,6 @@ function Leaderboard() {
   });
 
   const [calendarAnchor, setCalendarAnchor] = React.useState<HTMLButtonElement | null>(null);
-
   const calendarOpen = Boolean(calendarAnchor);
 
   const handleOpenCalendar = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -53,6 +47,22 @@ function Leaderboard() {
 
   const handleCloseCalendar = () => {
     setCalendarAnchor(null);
+  };
+
+  const handleSelectDate = (date: Date) => {
+    if (date < minActiveDate || date > maxActiveDate) return;
+    setSelectedDate(toDateOnly(date));
+    handleCloseCalendar();
+  };
+
+  const moveByDays = (amount: number) => {
+    setSelectedDate((current) => {
+      const next = addDays(current, amount);
+      if (next < minActiveDate) return minActiveDate;
+      if (next > maxActiveDate) return maxActiveDate;
+      return next;
+    });
+    handleCloseCalendar();
   };
 
   const selectedDateKey = formatDateKey(selectedDate);
@@ -66,7 +76,7 @@ function Leaderboard() {
     queryKey: ['dailyLeaderboard', selectedDateKey, settings.playerId],
     queryFn: () => fetchDailyLeaderboard(selectedDateKey, settings.playerId, 10),
     staleTime: 30_000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 
   const leaderboardEntries = leaderboard.entries;
@@ -86,154 +96,11 @@ function Leaderboard() {
   const isPrevDayDisabled = selectedDate <= minActiveDate;
   const isNextDayDisabled = selectedDate >= maxActiveDate;
 
-  const isPrevMonthDisabled = startOfMonth(selectedDate) <= startOfMonth(minActiveDate);
-  const isNextMonthDisabled = startOfMonth(selectedDate) >= startOfMonth(maxActiveDate);
-
-  const calendarDays = React.useMemo(() => {
-    const monthStart = startOfMonth(selectedDate);
-    const firstWeekday = (monthStart.getDay() + 6) % 7;
-    const totalCells = Math.ceil((daysInMonth(selectedDate) + firstWeekday) / 7) * 7;
-    const cells: Array<{ date: Date; inMonth: boolean; isSelected: boolean; isDisabled: boolean }> =
-      [];
-
-    for (let index = 0; index < totalCells; index += 1) {
-      const currentDate = addDays(monthStart, index - firstWeekday);
-      const inMonth = currentDate.getMonth() === selectedDate.getMonth();
-      const isSelected = formatDateKey(currentDate) === formatDateKey(selectedDate);
-      const isDisabled = currentDate < minActiveDate || currentDate > maxActiveDate;
-
-      cells.push({ date: currentDate, inMonth, isSelected, isDisabled });
-    }
-
-    return cells;
-  }, [selectedDate, minActiveDate, maxActiveDate]);
-
-  const moveByDays = (amount: number) => {
-    setSelectedDate((current) => {
-      const next = addDays(current, amount);
-      if (next < minActiveDate) return minActiveDate;
-      if (next > maxActiveDate) return maxActiveDate;
-      return next;
-    });
-    handleCloseCalendar();
-  };
-
-  const moveByMonth = (amount: number) => {
-    setSelectedDate((current) => {
-      const targetMonth = new Date(current.getFullYear(), current.getMonth() + amount, 1);
-      if (targetMonth < minActiveDate) return minActiveDate;
-      if (targetMonth > maxActiveDate) return maxActiveDate;
-      return targetMonth;
-    });
-  };
-
-  const goToDate = (date: Date) => {
-    if (date < minActiveDate || date > maxActiveDate) return;
-    setSelectedDate(toDateOnly(date));
-    handleCloseCalendar();
-  };
-
-  const renderCalendarContent = () => (
-    <Box sx={{ width: '100%' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <IconButton
-          size="small"
-          onClick={() => moveByMonth(-1)}
-          disabled={isPrevMonthDisabled}
-          aria-label="previous month"
-        >
-          <ArrowBackIcon fontSize="small" />
-        </IconButton>
-        <Typography variant="subtitle1" fontWeight={700}>
-          {monthLabel}
-        </Typography>
-        <IconButton
-          size="small"
-          onClick={() => moveByMonth(1)}
-          disabled={isNextMonthDisabled}
-          aria-label="next month"
-        >
-          <ArrowForwardIcon fontSize="small" />
-        </IconButton>
-      </Stack>
-
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 0.5,
-          textAlign: 'center',
-          mb: 1,
-        }}
-      >
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
-          <Typography key={idx} variant="caption" color="text.secondary" fontWeight={700}>
-            {day}
-          </Typography>
-        ))}
-      </Box>
-
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 0.5,
-        }}
-      >
-        {calendarDays.map(({ date, inMonth, isSelected, isDisabled }) => (
-          <Button
-            key={formatDateKey(date)}
-            size="small"
-            disabled={isDisabled}
-            onClick={() => goToDate(date)}
-            sx={{
-              minWidth: 0,
-              p: 0.75,
-              borderRadius: 1.5,
-              color: isSelected
-                ? 'primary.contrastText'
-                : isDisabled
-                  ? 'text.disabled'
-                  : inMonth
-                    ? 'text.primary'
-                    : 'text.disabled',
-              bgcolor: isSelected ? 'primary.main' : 'transparent',
-              '&:hover': {
-                bgcolor: isSelected ? 'primary.dark' : 'action.hover',
-              },
-            }}
-          >
-            {date.getDate()}
-          </Button>
-        ))}
-      </Box>
-    </Box>
-  );
-
   return (
-    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', p: { xs: 2, sm: 3 } }}>
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: 1200,
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          gap: 3,
-        }}
-      >
+    <Box sx={pageContainerStyles}>
+      <Box sx={contentLayoutStyles}>
         {/* Main Leaderboard Card */}
-        <Box
-          sx={{
-            flex: 1,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 3,
-            bgcolor: 'background.paper',
-            p: { xs: 2, sm: 3 },
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+        <Box sx={leaderboardCardStyles}>
           {/* Header Row */}
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Typography variant="h5" fontWeight={700}>
@@ -264,19 +131,7 @@ function Leaderboard() {
               <ArrowBackIcon />
             </IconButton>
 
-            <Box
-              component="button"
-              onClick={handleOpenCalendar}
-              sx={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'center',
-                p: 0.5,
-                borderRadius: 1,
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
+            <Box component="button" onClick={handleOpenCalendar} sx={dateSelectorButtonStyles}>
               <Typography variant="caption" color="text.secondary" display="block">
                 {monthLabel}
               </Typography>
@@ -298,53 +153,33 @@ function Leaderboard() {
           <Divider sx={{ mb: 2 }} />
 
           {isLoading ? (
-            <Typography variant="body1" color="text.secondary">
-              Loading leaderboard...
-            </Typography>
+            <Box sx={centeredContainerStyles}>
+              <LoadingDisplay message="Loading leaderboard..." />
+            </Box>
           ) : error ? (
-            <Box>
-              <Typography variant="body1" color="error.main">
+            <Box sx={errorStateContainerStyles}>
+              <Typography variant="body1" color="text.secondary">
                 Unable to load the leaderboard for this day.
               </Typography>
-              <Button variant="text" onClick={() => void refetch()} sx={{ mt: 1 }}>
+              <Button variant="contained" onClick={() => void refetch()} sx={{ mt: 2 }}>
                 Retry
               </Button>
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, position: 'relative' }}>
-              <Box
-                sx={{
-                  maxHeight: { xs: '50vh', md: '500px' },
-                  overflowY: 'auto',
-                  pr: 1,
-                  '&::-webkit-scrollbar': { width: '6px' },
-                  '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: 'action.focus',
-                    borderRadius: '3px',
-                  },
-                }}
-              >
-                <Stack spacing={1.5}>
-                  {leaderboardEntries.length === 0 ? (
+            <Box sx={leaderboardBodyStyles}>
+              <Box sx={entriesListScrollStyles}>
+                {leaderboardEntries.length === 0 ? (
+                  <Box sx={centeredContainerStyles}>
                     <Typography variant="body1" color="text.secondary">
                       No scores yet for this day.
                     </Typography>
-                  ) : (
-                    leaderboardEntries.map((entry) => (
+                  </Box>
+                ) : (
+                  <Stack spacing={1.5}>
+                    {leaderboardEntries.map((entry) => (
                       <Box
                         key={`${entry.name}-${entry.rank}`}
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: '44px 1fr auto',
-                          alignItems: 'center',
-                          gap: 2,
-                          px: 1.5,
-                          py: 1,
-                          borderRadius: 2,
-                          border: '1px solid',
-                          borderColor: entry.isCurrentUser ? 'primary.main' : 'transparent',
-                          backgroundColor: entry.isCurrentUser ? 'action.selected' : 'transparent',
-                        }}
+                        sx={getEntryRowStyles(entry.isCurrentUser)}
                       >
                         <Typography
                           variant="subtitle2"
@@ -360,7 +195,7 @@ function Leaderboard() {
                             {entry.isCurrentUser ? ' (you)' : ''}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {entry.solvedWords} words found
+                            {entry.wordsFoundCount} words found
                           </Typography>
                         </Box>
 
@@ -368,38 +203,14 @@ function Leaderboard() {
                           {entry.score}
                         </Typography>
                       </Box>
-                    ))
-                  )}
-                </Stack>
+                    ))}
+                  </Stack>
+                )}
               </Box>
 
               {currentUserEntry && (
-                <Box
-                  sx={{
-                    pt: 1.5,
-                    mt: 1,
-                    borderTop: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: 'background.paper',
-                    position: 'sticky',
-                    bottom: 0,
-                    zIndex: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: '44px 1fr auto',
-                      alignItems: 'center',
-                      gap: 2,
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'primary.main',
-                      backgroundColor: 'action.selected',
-                    }}
-                  >
+                <Box sx={stickyCurrentUserFooterStyles}>
+                  <Box sx={getEntryRowStyles(true)}>
                     <Typography variant="subtitle2" fontWeight={700} color="primary.main">
                       #{currentUserEntry.rank}
                     </Typography>
@@ -409,7 +220,7 @@ function Leaderboard() {
                         {currentUserEntry.name} (you)
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {currentUserEntry.solvedWords} words found
+                        {currentUserEntry.wordsFoundCount} words found
                       </Typography>
                     </Box>
 
@@ -425,18 +236,13 @@ function Leaderboard() {
 
         {/* Desktop Sidebar Calendar */}
         {isDesktop && (
-          <Box
-            sx={{
-              width: 300,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 3,
-              bgcolor: 'background.paper',
-              p: 2,
-              alignSelf: 'flex-start',
-            }}
-          >
-            {renderCalendarContent()}
+          <Box sx={desktopSidebarStyles}>
+            <Calendar
+              selectedDate={selectedDate}
+              minDate={minActiveDate}
+              maxDate={maxActiveDate}
+              onSelectDate={handleSelectDate}
+            />
           </Box>
         )}
 
@@ -448,14 +254,135 @@ function Leaderboard() {
             onClose={handleCloseCalendar}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-            PaperProps={{ sx: { p: 2, width: 320, borderRadius: 3 } }}
+            slotProps={{ paper: { sx: popoverPaperStyles } }}
           >
-            {renderCalendarContent()}
+            <Calendar
+              selectedDate={selectedDate}
+              minDate={minActiveDate}
+              maxDate={maxActiveDate}
+              onSelectDate={handleSelectDate}
+            />
           </Popover>
         )}
       </Box>
     </Box>
   );
 }
+
+const pageContainerStyles = {
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'center',
+  p: { xs: 2, sm: 3 },
+};
+
+const contentLayoutStyles = {
+  width: '100%',
+  maxWidth: 1200,
+  display: 'flex',
+  flexDirection: { xs: 'column', md: 'row' },
+  gap: 3,
+};
+
+const leaderboardCardStyles = {
+  flex: 1,
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: 3,
+  bgcolor: 'background.paper',
+  p: { xs: 2, sm: 3 },
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 400,
+};
+
+const dateSelectorButtonStyles = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  textAlign: 'center',
+  p: 0.5,
+  borderRadius: 1,
+  '&:hover': { bgcolor: 'action.hover' },
+};
+
+const centeredContainerStyles = {
+  flex: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: 200,
+};
+
+const errorStateContainerStyles = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+  py: 4,
+};
+
+const leaderboardBodyStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  position: 'relative',
+};
+
+const entriesListScrollStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  maxHeight: { xs: '50vh', md: '500px' },
+  overflowY: 'auto',
+  pr: 1,
+  '&::-webkit-scrollbar': { width: '6px' },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: 'action.focus',
+    borderRadius: '3px',
+  },
+};
+
+const stickyCurrentUserFooterStyles = {
+  pt: 1.5,
+  mt: 1,
+  borderTop: '1px solid',
+  borderColor: 'divider',
+  bgcolor: 'background.paper',
+  position: 'sticky',
+  bottom: 0,
+  zIndex: 1,
+};
+
+const desktopSidebarStyles = {
+  width: 300,
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: 3,
+  bgcolor: 'background.paper',
+  p: 2,
+  alignSelf: 'flex-start',
+};
+
+const popoverPaperStyles = {
+  p: 2,
+  width: 320,
+  borderRadius: 3,
+};
+
+const getEntryRowStyles = (isCurrentUser?: boolean) => ({
+  display: 'grid',
+  gridTemplateColumns: '44px 1fr auto',
+  alignItems: 'center',
+  gap: 2,
+  px: 1.5,
+  py: 1,
+  borderRadius: 2,
+  border: '1px solid',
+  borderColor: isCurrentUser ? 'primary.main' : 'transparent',
+  backgroundColor: isCurrentUser ? 'action.selected' : 'transparent',
+});
 
 export default Leaderboard;
