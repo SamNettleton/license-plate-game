@@ -58,7 +58,7 @@ describe('Daily Page', () => {
       };
       (plateService.fetchDailyPlate as any).mockResolvedValue(mockDailyPlate);
 
-      render(<Daily resultsOpen={false} />, { wrapper });
+      render(<Daily />, { wrapper });
 
       expect(screen.getByText(/Crafting a daily plate/i)).toBeInTheDocument();
 
@@ -71,26 +71,10 @@ describe('Daily Page', () => {
     it('renders error state when the API call fails', async () => {
       (plateService.fetchDailyPlate as any).mockRejectedValue(new Error('Network Error'));
 
-      render(<Daily resultsOpen={false} />, { wrapper });
+      render(<Daily />, { wrapper });
 
       const errorMsg = await screen.findByText(/Network Error/i);
       expect(errorMsg).toBeInTheDocument();
-    });
-  });
-
-  describe('Modal Integration', () => {
-    it('renders the game without crashing when resultsOpen is true', async () => {
-      const mockDailyPlate = {
-        sequence: 'LPG',
-        solutionsCount: 15,
-        goalPoints: 50,
-      };
-      (plateService.fetchDailyPlate as any).mockResolvedValue(mockDailyPlate);
-
-      render(<Daily resultsOpen={true} />, { wrapper });
-
-      const plateElement = await screen.findByText('LPG');
-      expect(plateElement).toBeInTheDocument();
     });
   });
 });

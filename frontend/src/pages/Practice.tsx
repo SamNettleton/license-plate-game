@@ -8,7 +8,7 @@ import ErrorDisplay from '@/components/feedback/ErrorDisplay';
 
 const PLATE_STORAGE_KEY = 'lp_practice_current_plate';
 
-function Practice({ resultsOpen }: { resultsOpen: boolean }) {
+function Practice() {
   const {
     data: challenge,
     isLoading,
@@ -36,7 +36,6 @@ function Practice({ resultsOpen }: { resultsOpen: boolean }) {
           solutionsCount={challenge.solutionsCount}
           goalPoints={challenge.goalPoints}
           mode={GameMode.PRACTICE}
-          isModalOpen={resultsOpen}
         />
       </Box>
     </Fade>

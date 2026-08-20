@@ -39,7 +39,7 @@ describe('Practice Page', () => {
       const mockPlate = { sequence: 'ABC', solutionsCount: 5, goalPoints: 10 };
       (plateService.fetchRandomPlate as any).mockResolvedValue(mockPlate);
 
-      render(<Practice resultsOpen={false} />, { wrapper });
+      render(<Practice />, { wrapper });
 
       expect(screen.getByText(/Crafting a random plate/i)).toBeInTheDocument();
 
@@ -54,7 +54,7 @@ describe('Practice Page', () => {
       const savedPlate = { sequence: 'XYZ', solutionsCount: 3, goalPoints: 5 };
       localStorage.setItem('lp_practice_current_plate', JSON.stringify(savedPlate));
 
-      render(<Practice resultsOpen={false} />, { wrapper });
+      render(<Practice />, { wrapper });
 
       await waitFor(() => {
         expect(screen.getByText('XYZ')).toBeInTheDocument();
@@ -65,23 +65,10 @@ describe('Practice Page', () => {
     it('renders error state when the API fails', async () => {
       (plateService.fetchRandomPlate as any).mockRejectedValue(new Error('Network Error'));
 
-      render(<Practice resultsOpen={false} />, { wrapper });
+      render(<Practice />, { wrapper });
 
       const errorMsg = await screen.findByText(/Network Error/i);
       expect(errorMsg).toBeInTheDocument();
-    });
-  });
-
-  describe('Modal Integration', () => {
-    it('renders the game without crashing when resultsOpen is true', async () => {
-      const savedPlate = { sequence: 'PRC', solutionsCount: 8, goalPoints: 15 };
-      localStorage.setItem('lp_practice_current_plate', JSON.stringify(savedPlate));
-
-      render(<Practice resultsOpen={true} />, { wrapper });
-
-      await waitFor(() => {
-        expect(screen.getByText('PRC')).toBeInTheDocument();
-      });
     });
   });
 });

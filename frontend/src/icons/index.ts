@@ -12,3 +12,4 @@ export { default as BarChartIcon } from '@mui/icons-material/BarChart';
 export { default as CloseIcon } from '@mui/icons-material/Close';
 export { default as SettingsIcon } from '@mui/icons-material/Settings';
 export { default as TrophyIcon } from '@mui/icons-material/EmojiEvents';
+export { default as ChevronRightIcon } from '@mui/icons-material/ChevronRight';

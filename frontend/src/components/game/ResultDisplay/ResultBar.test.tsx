@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import ResultBar from './ResultBar';
 
 describe('ResultBar Component', () => {
@@ -50,5 +50,15 @@ describe('ResultBar Component', () => {
   it('renders the points fraction correctly', () => {
     renderBar(120, 400);
     expect(screen.getByText('120 / 400 pts')).toBeInTheDocument();
+  });
+
+  it('calls onClick when clicked', () => {
+    const mockOnClick = vi.fn();
+    render(<ResultBar points={100} goalPoints={300} onClick={mockOnClick} />);
+    
+    const bar = screen.getByRole('button', { name: /view tier breakdown and rules/i });
+    fireEvent.click(bar);
+    
+    expect(mockOnClick).toHaveBeenCalledTimes(1);
   });
 });

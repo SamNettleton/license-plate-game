@@ -4,6 +4,7 @@ import PuzzleDisplay from './PuzzleDisplay';
 import ResultDisplay from './ResultDisplay/ResultDisplay';
 import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
 import ResultBar from './ResultDisplay/ResultBar';
+import ResultsModal from '@/components/modals/ResultsModal';
 import { Box, Grid } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
 import { GameMode, STORAGE_KEY } from '@/constants/game';
@@ -23,18 +24,18 @@ type Props = {
   solutionsCount: number;
   goalPoints: number;
   mode: GameMode;
-  isModalOpen: boolean;
   puzzleDate?: string; // Optional, only for daily mode
   userId?: string; // Optional, only for daily mode
 };
 
-function Game({ plate, goalPoints, mode, isModalOpen, puzzleDate, userId }: Props) {
+function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
   const queryClient = useQueryClient();
   const [state, dispatch] = React.useReducer(gameReducer, mode, createInitialState);
 
   const [showAlert, setShowAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [visibility, setVisibility] = React.useState(() =>
     typeof document !== 'undefined' ? document.visibilityState : 'visible',
   );
@@ -47,11 +48,13 @@ function Game({ plate, goalPoints, mode, isModalOpen, puzzleDate, userId }: Prop
       points: state.points,
       tierTimes: state.tierTimes,
     });
+  }, [state.tierTimes, state.points, state.elapsedSeconds, goalPoints, plate, queryClient]);
 
+  React.useEffect(() => {
     return () => {
       queryClient.removeQueries({ queryKey: ['active-game-tier-times'] });
     };
-  }, [state.tierTimes, state.points, state.elapsedSeconds, goalPoints, plate, queryClient]);
+  }, [queryClient]);
 
   React.useEffect(() => {
     const handleVisibility = () => setVisibility(document.visibilityState);
@@ -166,7 +169,11 @@ function Game({ plate, goalPoints, mode, isModalOpen, puzzleDate, userId }: Prop
             position: 'relative',
           }}
         >
-          <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
+          <ResultBar
+            points={state.points}
+            goalPoints={goalPoints}
+            onClick={() => setIsModalOpen(true)}
+          ></ResultBar>
           <Box sx={{ position: 'relative', mt: 1 }}>
             <MobileResultDisplay
               solutions={state.solutions}
@@ -188,9 +195,23 @@ function Game({ plate, goalPoints, mode, isModalOpen, puzzleDate, userId }: Prop
         </Box>
       </Grid>
       <Grid size={{ md: 6 }} sx={{ display: { xs: 'none', md: 'block' } }}>
-        <ResultBar points={state.points} goalPoints={goalPoints}></ResultBar>
+        <ResultBar
+          points={state.points}
+          goalPoints={goalPoints}
+          onClick={() => setIsModalOpen(true)}
+        ></ResultBar>
         <ResultDisplay solutions={state.solutions}></ResultDisplay>
       </Grid>
+      <ResultsModal
+        elapsedSeconds={state.elapsedSeconds}
+        goalPoints={goalPoints}
+        open={isModalOpen}
+        plate={plate}
+        points={state.points}
+        showShareButton={mode === GameMode.DAILY}
+        tierTimes={state.tierTimes}
+        onClose={() => setIsModalOpen(false)}
+      />
     </Grid>
   );
 }

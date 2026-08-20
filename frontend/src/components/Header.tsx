@@ -10,19 +10,13 @@ import {
   TrophyIcon,
 } from '@icons';
 import HowToPlayModal from '@/components/modals/HowToPlayModal';
-import ResultsModal from '@/components/modals/ResultsModal';
 import SettingsModal from '@/components/modals/SettingsModal';
 import ConfirmationDialog from '@/components/modals/ConfirmationDialog';
 import Logo from '@/components/Logo';
 import { resetPracticeGame, hasPracticeProgress } from '@/utils/practiceRandomizer';
-import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
-type HeaderProps = {
-  resultsOpen: boolean;
-  setResultsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-};
-
-export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
+export default function Header() {
   const [howToPlayModalOpen, setHowToPlayModalOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -35,26 +29,7 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
   const isPracticePage = location.pathname === '/practice';
   const isLeaderboardPage = location.pathname === '/leaderboard';
 
-  type ActiveGameTierData = {
-    elapsedSeconds: number;
-    goalPoints: number;
-    plate: string;
-    points: number;
-    tierTimes: Record<string, number>;
-  };
 
-  const DEFAULT_GAME_TIER_DATA: ActiveGameTierData = {
-    elapsedSeconds: 0,
-    goalPoints: 0,
-    plate: '',
-    points: 0,
-    tierTimes: {},
-  };
-
-  const { data: gameTierData = DEFAULT_GAME_TIER_DATA } = useQuery<ActiveGameTierData>({
-    queryKey: ['active-game-tier-times'],
-    queryFn: skipToken,
-  });
 
   const handleRandomizeClick = () => {
     if (hasPracticeProgress()) {
@@ -139,13 +114,17 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
             </Tooltip>
           )}
 
-          {(isDailyPage || isPracticePage) && (
+          {/*
+          TODO: Stats page will be reimplemented with game stats rather than timer info.
+          Until then, it will be always hidden.
+          */}
+          {(false && (isDailyPage || isPracticePage)) && (
             <Tooltip title="View stats">
               <IconButton
                 aria-label="view stats"
                 color="inherit"
                 sx={iconButtonStyles}
-                onClick={() => setResultsOpen(true)}
+                onClick={() => (true)}
               >
                 <BarChartIcon sx={{ fontSize: '1.3rem' }} />
               </IconButton>
@@ -178,18 +157,7 @@ export default function Header({ resultsOpen, setResultsOpen }: HeaderProps) {
         </Box>
         <HowToPlayModal open={howToPlayModalOpen} onClose={() => setHowToPlayModalOpen(false)} />
         <SettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
-        {(isDailyPage || isPracticePage) && (
-          <ResultsModal
-            elapsedSeconds={gameTierData?.elapsedSeconds ?? 0}
-            goalPoints={gameTierData?.goalPoints ?? 0}
-            open={resultsOpen}
-            plate={gameTierData?.plate ?? ''}
-            points={gameTierData?.points ?? 0}
-            showShareButton={isDailyPage}
-            tierTimes={gameTierData?.tierTimes ?? {}}
-            onClose={() => setResultsOpen(false)}
-          />
-        )}
+
       </Toolbar>
     </AppBar>
   );
