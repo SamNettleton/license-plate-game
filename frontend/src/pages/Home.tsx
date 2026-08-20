@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Box, Typography, Stack } from '@mui/material';
+import { Button, Box, Typography, Stack } from '@/material-ui';
 import HowToPlayModal from '@/components/modals/HowToPlayModal';
 
 function Home() {

@@ -36,4 +36,5 @@ export { default as useMediaQuery } from '@mui/material/useMediaQuery';
 export { default as FormControlLabel } from '@mui/material/FormControlLabel';
 export { default as Switch } from '@mui/material/Switch';
 export { useTheme as useTheme } from '@mui/material';
+export type { SxProps, Theme } from '@mui/material';
 export type { SupportedColorScheme as Mode } from '@mui/material/styles';

@@ -1,17 +1,7 @@
 import * as React from 'react';
-import {
-  Box,
-  IconButton,
-  Stack,
-  Typography,
-  Button,
-  type SxProps,
-  type Theme,
-} from '@mui/material';
-import {
-  ArrowBackIosNew as ArrowBackIcon,
-  ArrowForwardIos as ArrowForwardIcon,
-} from '@mui/icons-material';
+import { Box, Button, IconButton, Stack, Typography } from '@/material-ui';
+import type { SxProps, Theme } from '@/material-ui';
+import { ArrowBackIcon, ArrowForwardIcon } from '@/icons';
 import { formatDateKey, addDays, startOfMonth, daysInMonth } from '@/utils/date';
 
 export interface CalendarProps {

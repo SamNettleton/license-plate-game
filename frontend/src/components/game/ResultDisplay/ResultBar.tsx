@@ -17,7 +17,7 @@ export default function ResultDisplay({ points, goalPoints, onClick }: Props) {
       onClick={onClick}
       role="button"
       tabIndex={0}
-      aria-label="View tier breakdown and rules"
+      aria-label="View tier breakdown"
       sx={resultBarStyles}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
