@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Leaderboard from './Leaderboard';
 import { fetchDailyLeaderboard, type LeaderboardResponse } from '@/api/leaderboardService';
 import { useSettings } from '@/context/SettingsContext';
-import { useMediaQuery } from '@mui/material';
+import { useMediaQuery } from '@/material-ui';
 
 // Mock dependencies
 vi.mock('@/api/leaderboardService', () => ({
@@ -15,7 +15,7 @@ vi.mock('@/context/SettingsContext', () => ({
   useSettings: vi.fn(),
 }));
 
-vi.mock('@mui/material', async (importOriginal) => {
+vi.mock('@/material-ui', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, any>),

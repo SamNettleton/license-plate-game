@@ -8,7 +8,7 @@ import ErrorDisplay from '@/components/feedback/ErrorDisplay';
 import { useSettings } from '@/context/SettingsContext';
 import { getLocalDailyDate } from '@/utils/date';
 
-function Daily({ resultsOpen }: { resultsOpen: boolean }) {
+function Daily() {
   const { settings } = useSettings();
   const playerId = settings.playerId;
 
@@ -39,7 +39,6 @@ function Daily({ resultsOpen }: { resultsOpen: boolean }) {
           solutionsCount={challenge.solutionsCount}
           goalPoints={challenge.goalPoints}
           mode={GameMode.DAILY}
-          isModalOpen={resultsOpen}
           puzzleDate={today}
           userId={playerId}
         />

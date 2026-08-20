@@ -10,7 +10,7 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
-} from '@mui/material';
+} from '@/material-ui';
 import {
   ArrowBackIosNew as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon,

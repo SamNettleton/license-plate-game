@@ -1,4 +1,3 @@
-import * as React from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -16,27 +15,19 @@ import { SettingsProvider } from '@/context/SettingsContext';
 const queryClient = new QueryClient();
 
 function App() {
-  const [resultsOpen, setResultsOpen] = React.useState(false);
-
   return (
     <ThemeProvider theme={theme} defaultMode="dark">
-      <CssBaseline />
+      <CssBaseline/>
       <SettingsProvider>
         <QueryClientProvider client={queryClient}>
-          <AppContent resultsOpen={resultsOpen} setResultsOpen={setResultsOpen} />
+          <AppContent/>
         </QueryClientProvider>
       </SettingsProvider>
     </ThemeProvider>
   );
 }
 
-function AppContent({
-  resultsOpen,
-  setResultsOpen,
-}: {
-  resultsOpen: boolean;
-  setResultsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
+function AppContent() {
   const { mode } = useColorScheme();
   if (!mode) {
     return null;
@@ -52,13 +43,13 @@ function AppContent({
           overflow: 'hidden',
         }}
       >
-        <Header resultsOpen={resultsOpen} setResultsOpen={setResultsOpen} />
+        <Header />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
-            <Route path="/daily" element={<Daily resultsOpen={resultsOpen} />} />
-            <Route path="/practice" element={<Practice resultsOpen={resultsOpen} />} />
+            <Route path="/daily" element={<Daily />} />
+            <Route path="/practice" element={<Practice />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
           </Routes>
         </Box>

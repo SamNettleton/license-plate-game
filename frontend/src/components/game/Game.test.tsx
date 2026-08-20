@@ -43,7 +43,6 @@ describe('Game Component', () => {
             solutionsCount={10}
             goalPoints={100}
             mode={GameMode.DAILY}
-            isModalOpen={false}
           />
         </QueryClientProvider>,
       );
@@ -72,7 +71,6 @@ describe('Game Component', () => {
             solutionsCount={10}
             goalPoints={100}
             mode={GameMode.DAILY}
-            isModalOpen={false}
           />
         </QueryClientProvider>,
       );
@@ -106,7 +104,6 @@ describe('Game Component', () => {
             solutionsCount={10}
             goalPoints={100}
             mode={GameMode.DAILY}
-            isModalOpen={false}
             puzzleDate="2026-08-11"
             userId="test-user-id"
           />
@@ -141,7 +138,6 @@ describe('Game Component', () => {
             solutionsCount={10}
             goalPoints={100}
             mode={GameMode.DAILY}
-            isModalOpen={false}
           />
         </QueryClientProvider>,
       );
@@ -177,7 +173,6 @@ describe('Game Component', () => {
             solutionsCount={10}
             goalPoints={100}
             mode={GameMode.DAILY}
-            isModalOpen={false}
           />
         </QueryClientProvider>,
       );

@@ -38,7 +38,6 @@ vi.mock('@/utils/practiceRandomizer', () => ({
 
 describe('Header Component', () => {
   const mockSetMode = vi.fn();
-  const mockSetResultsOpen = vi.fn();
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -55,14 +54,11 @@ describe('Header Component', () => {
     });
   });
 
-  const renderHeader = (
-    initialRoute = '/',
-    props = { resultsOpen: false, setResultsOpen: mockSetResultsOpen },
-  ) => {
+  const renderHeader = (initialRoute = '/') => {
     return render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[initialRoute]}>
-          <Header {...props} />
+          <Header />
         </MemoryRouter>
       </QueryClientProvider>,
     );
@@ -180,28 +176,6 @@ describe('Header Component', () => {
       fireEvent.click(cancelBtn);
 
       expect(resetPracticeGame).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Stats Modal Navigation', () => {
-    it('does not render stats button on the homepage', () => {
-      renderHeader('/');
-      expect(screen.queryByLabelText('view stats')).not.toBeInTheDocument();
-    });
-
-    it('renders stats button on daily and practice pages', () => {
-      const { unmount } = renderHeader('/daily');
-      expect(screen.getByLabelText('view stats')).toBeInTheDocument();
-      unmount();
-
-      renderHeader('/practice');
-      expect(screen.getByLabelText('view stats')).toBeInTheDocument();
-    });
-
-    it('triggers setResultsOpen when stats button is clicked', () => {
-      renderHeader('/daily');
-      fireEvent.click(screen.getByLabelText('view stats'));
-      expect(mockSetResultsOpen).toHaveBeenCalledWith(true);
     });
   });
 
