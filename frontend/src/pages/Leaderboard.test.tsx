@@ -15,7 +15,7 @@ vi.mock('@/context/SettingsContext', () => ({
   useSettings: vi.fn(),
 }));
 
-vi.mock('@mui/material', async (importOriginal) => {
+vi.mock('@/material-ui', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, any>),
