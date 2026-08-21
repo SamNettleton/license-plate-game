@@ -3,7 +3,6 @@ import { getLocalDailyDate } from '@/utils/date';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-// Create an axios instance to avoid repeating the base URL
 const api = axios.create({
   baseURL: BASE_URL,
 });

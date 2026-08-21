@@ -25,11 +25,9 @@ export default function Header() {
   const queryClient = useQueryClient();
 
   const isHomePage = location.pathname === '/';
-  const isDailyPage = location.pathname === '/daily';
   const isPracticePage = location.pathname === '/practice';
   const isLeaderboardPage = location.pathname === '/leaderboard';
-
-
+  const isStatsPage = location.pathname === '/stats';
 
   const handleRandomizeClick = () => {
     if (hasPracticeProgress()) {
@@ -43,18 +41,36 @@ export default function Header() {
     resetPracticeGame(queryClient);
   };
 
-  const previousPath = (location.state as { from?: string } | null)?.from;
-
   const handleBackClick = () => {
-    if (previousPath) {
-      navigate(previousPath);
+    const origin = (location.state as { origin?: string })?.origin;
+    if (origin) {
+      navigate(origin);
     } else {
       navigate('/');
     }
   };
 
   const handleLeaderboardClick = () => {
-    navigate('/leaderboard', { state: { from: location.pathname } });
+    const origin = (location.state as { origin?: string })?.origin || location.pathname;
+    navigate('/leaderboard', { state: { origin } });
+  };
+
+  const handleStatsClick = () => {
+    const origin = (location.state as { origin?: string })?.origin || location.pathname;
+    navigate('/stats', { state: { origin } });
+  };
+
+  const originPath = (location.state as { origin?: string } | null)?.origin;
+
+  const getBackTooltipTitle = (path?: string) => {
+    switch (path) {
+      case '/daily':
+        return 'Back to daily game';
+      case '/practice':
+        return 'Back to practice mode';
+      default:
+        return 'Back to home';
+    }
   };
 
   return (
@@ -71,7 +87,7 @@ export default function Header() {
       <Toolbar sx={toolbarStyles}>
         <Box sx={{ minWidth: 48, gap: 1, display: 'flex' }}>
           {!isHomePage && (
-            <Tooltip title={previousPath ? 'Back' : 'Back to home'}>
+            <Tooltip title={getBackTooltipTitle(originPath)}>
               <IconButton
                 aria-label="back"
                 color="inherit"
@@ -114,24 +130,20 @@ export default function Header() {
             </Tooltip>
           )}
 
-          {/*
-          TODO: Stats page will be reimplemented with game stats rather than timer info.
-          Until then, it will be always hidden.
-          */}
-          {(false && (isDailyPage || isPracticePage)) && (
+          {!isStatsPage && (
             <Tooltip title="View stats">
               <IconButton
                 aria-label="view stats"
                 color="inherit"
                 sx={iconButtonStyles}
-                onClick={() => (true)}
+                onClick={handleStatsClick}
               >
                 <BarChartIcon sx={{ fontSize: '1.3rem' }} />
               </IconButton>
             </Tooltip>
           )}
 
-          {!isLeaderboardPage && (
+          {!isLeaderboardPage && !isStatsPage && (
             <Tooltip title="How to play">
               <IconButton
                 aria-label="how to play"
@@ -157,7 +169,6 @@ export default function Header() {
         </Box>
         <HowToPlayModal open={howToPlayModalOpen} onClose={() => setHowToPlayModalOpen(false)} />
         <SettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
-
       </Toolbar>
     </AppBar>
   );

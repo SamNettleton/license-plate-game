@@ -9,6 +9,7 @@ from router import users
 from router import words
 from router import system
 from router import leaderboard
+from router import stats
 
 load_dotenv()
 
@@ -33,6 +34,7 @@ app.include_router(system.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(words.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
+app.include_router(stats.router, prefix="/api")
 
 # unmask_url=True ensures that /api/plate/ABC and /api/plate/XYZ 
 # are grouped together in metrics rather than creating thousands of separate entries.

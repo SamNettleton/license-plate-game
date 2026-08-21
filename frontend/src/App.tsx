@@ -9,6 +9,7 @@ import About from '@/pages/About';
 import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
 import Leaderboard from '@/pages/Leaderboard';
+import Stats from '@/pages/Stats';
 import Header from './components/Header';
 import { SettingsProvider } from '@/context/SettingsContext';
 
@@ -17,10 +18,10 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <ThemeProvider theme={theme} defaultMode="dark">
-      <CssBaseline/>
+      <CssBaseline />
       <SettingsProvider>
         <QueryClientProvider client={queryClient}>
-          <AppContent/>
+          <AppContent />
         </QueryClientProvider>
       </SettingsProvider>
     </ThemeProvider>
@@ -51,6 +52,7 @@ function AppContent() {
             <Route path="/daily" element={<Daily />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/stats" element={<Stats />} />
           </Routes>
         </Box>
       </Box>

@@ -15,12 +15,12 @@ import { ArrowBackIcon, ArrowForwardIcon, CalendarIcon, RefreshIcon } from '@ico
 import { formatDateKey, toDateOnly, addDays, getLatestActiveGlobalDate } from '@/utils/date';
 import { EARLIEST_ACTIVE_DATE } from '@/constants/date';
 import { useSettings } from '@/context/SettingsContext';
-import { fetchDailyLeaderboard, type LeaderboardResponse } from '@/api/leaderboardService';
+import { fetchDailyStats, type StatsResponse } from '@/api/statsService';
 import { Calendar } from '@/components/common/Calendar';
 import LoadingDisplay from '@/components/feedback/LoadingDisplay';
-import LeaderboardTable from '@/components/results/LeaderboardTable';
+import StatsComparisonTable from '@/components/results/StatsComparisonTable';
 
-function Leaderboard() {
+export default function Stats() {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const { settings } = useSettings();
@@ -29,12 +29,11 @@ function Leaderboard() {
   const minActiveDate = React.useMemo(() => toDateOnly(EARLIEST_ACTIVE_DATE), []);
 
   const [selectedDate, setSelectedDate] = React.useState(() => {
-    const today = toDateOnly(new Date());
-    if (today > maxActiveDate) return maxActiveDate;
-    if (today < minActiveDate) return minActiveDate;
-    return today;
+    const localToday = toDateOnly(new Date());
+    if (localToday > maxActiveDate) return maxActiveDate;
+    if (localToday < minActiveDate) return minActiveDate;
+    return localToday;
   });
-
   const [calendarAnchor, setCalendarAnchor] = React.useState<HTMLButtonElement | null>(null);
   const calendarOpen = Boolean(calendarAnchor);
 
@@ -65,20 +64,17 @@ function Leaderboard() {
   const selectedDateKey = formatDateKey(selectedDate);
 
   const {
-    data: leaderboard = { entries: [], currentUser: undefined },
+    data: statsData,
     isLoading,
     isFetching,
     error,
     refetch,
-  } = useQuery<LeaderboardResponse>({
-    queryKey: ['dailyLeaderboard', selectedDateKey, settings.playerId],
-    queryFn: () => fetchDailyLeaderboard(selectedDateKey, settings.playerId, 10),
+  } = useQuery<StatsResponse>({
+    queryKey: ['dailyStats', selectedDateKey, settings.playerId],
+    queryFn: () => fetchDailyStats(selectedDateKey, settings.playerId),
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
-
-  const leaderboardEntries = leaderboard.entries;
-  const currentUserEntry = leaderboard.currentUser;
 
   const monthLabel = selectedDate.toLocaleDateString(undefined, {
     month: 'long',
@@ -97,17 +93,17 @@ function Leaderboard() {
   return (
     <Box sx={pageContainerStyles}>
       <Box sx={contentLayoutStyles}>
-        {/* Main Leaderboard Card */}
-        <Box sx={leaderboardCardStyles}>
+        {/* Main Stats Card */}
+        <Box sx={statsCardStyles}>
           {/* Header Row */}
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Typography variant="h5" fontWeight={700}>
-              Leaderboard
+              Puzzle Statistics
             </Typography>
 
             <Stack direction="row" spacing={0.5} alignItems="center">
               <IconButton
-                aria-label="refresh leaderboard"
+                aria-label="refresh stats"
                 onClick={() => void refetch()}
                 disabled={isLoading || isFetching}
                 size="small"
@@ -168,24 +164,24 @@ function Leaderboard() {
             </IconButton>
           </Stack>
 
-          <Divider sx={{ mb: 2 }} />
+          <Divider sx={{ mb: 3 }} />
 
           {isLoading ? (
             <Box sx={centeredContainerStyles}>
-              <LoadingDisplay message="Loading leaderboard..." />
+              <LoadingDisplay message="Loading statistics..." />
             </Box>
           ) : error ? (
             <Box sx={errorStateContainerStyles}>
               <Typography variant="body1" color="text.secondary">
-                Unable to load the leaderboard for this day.
+                Unable to load statistics for this day.
               </Typography>
               <Button variant="contained" onClick={() => void refetch()} sx={{ mt: 2 }}>
                 Retry
               </Button>
             </Box>
-          ) : (
-            <LeaderboardTable entries={leaderboardEntries} currentUser={currentUserEntry} />
-          )}
+          ) : statsData ? (
+            <StatsComparisonTable stats={statsData} />
+          ) : null}
         </Box>
 
         {/* Desktop Sidebar Calendar */}
@@ -225,26 +221,20 @@ function Leaderboard() {
 
 const pageContainerStyles = {
   width: '100%',
-  height: '100dvh',
-  maxHeight: '100dvh',
   display: 'flex',
   justifyContent: 'center',
   p: { xs: 2, sm: 3 },
-  boxSizing: 'border-box',
-  overflow: 'hidden',
 };
 
 const contentLayoutStyles = {
   width: '100%',
   maxWidth: 1200,
-  height: '100%',
   display: 'flex',
   flexDirection: { xs: 'column', md: 'row' },
   gap: 3,
-  minHeight: 0,
 };
 
-const leaderboardCardStyles = {
+const statsCardStyles = {
   flex: 1,
   border: '1px solid',
   borderColor: 'divider',
@@ -253,9 +243,7 @@ const leaderboardCardStyles = {
   p: { xs: 2, sm: 3 },
   display: 'flex',
   flexDirection: 'column',
-  height: '100%',
-  minHeight: 0,
-  overflow: 'hidden',
+  minHeight: 400,
 };
 
 const dateSelectorButtonStyles = {
@@ -286,40 +274,6 @@ const errorStateContainerStyles = {
   py: 4,
 };
 
-const leaderboardBodyStyles = {
-  display: 'flex',
-  flexDirection: 'column',
-  flex: 1,
-  minHeight: 0,
-  position: 'relative',
-  overflow: 'hidden',
-};
-
-const entriesListScrollStyles = {
-  display: 'flex',
-  flexDirection: 'column',
-  flex: 1,
-  minHeight: 0,
-  overflowY: 'auto',
-  pr: 1,
-  '&::-webkit-scrollbar': { width: '6px' },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: 'action.focus',
-    borderRadius: '3px',
-  },
-};
-
-const stickyCurrentUserFooterStyles = {
-  pt: 1.5,
-  mt: 1,
-  borderTop: '1px solid',
-  borderColor: 'divider',
-  bgcolor: 'background.paper',
-  position: 'sticky',
-  bottom: 0,
-  zIndex: 1,
-};
-
 const desktopSidebarStyles = {
   width: 300,
   border: '1px solid',
@@ -335,18 +289,3 @@ const popoverPaperStyles = {
   width: 320,
   borderRadius: 3,
 };
-
-const getEntryRowStyles = (isCurrentUser?: boolean) => ({
-  display: 'grid',
-  gridTemplateColumns: '44px 1fr auto',
-  alignItems: 'center',
-  gap: 2,
-  px: 1.5,
-  py: 1,
-  borderRadius: 2,
-  border: '1px solid',
-  borderColor: isCurrentUser ? 'primary.main' : 'transparent',
-  backgroundColor: isCurrentUser ? 'action.selected' : 'transparent',
-});
-
-export default Leaderboard;
