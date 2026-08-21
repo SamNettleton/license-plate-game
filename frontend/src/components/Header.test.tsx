@@ -116,7 +116,27 @@ describe('Header Component', () => {
       renderHeader('/daily');
       fireEvent.click(screen.getByLabelText('leaderboard'));
       expect(mockNavigate).toHaveBeenCalledWith('/leaderboard', {
-        state: { from: '/daily' },
+        state: { origin: '/daily' },
+      });
+    });
+  });
+
+  describe('Stats Button', () => {
+    it('renders stats button on standard pages', () => {
+      renderHeader('/');
+      expect(screen.getByLabelText('view stats')).toBeInTheDocument();
+    });
+
+    it('does NOT render stats button on the stats page', () => {
+      renderHeader('/stats');
+      expect(screen.queryByLabelText('view stats')).not.toBeInTheDocument();
+    });
+
+    it('navigates to stats passing the current pathname in origin state when clicked', () => {
+      renderHeader('/daily');
+      fireEvent.click(screen.getByLabelText('view stats'));
+      expect(mockNavigate).toHaveBeenCalledWith('/stats', {
+        state: { origin: '/daily' },
       });
     });
   });
@@ -185,8 +205,12 @@ describe('Header Component', () => {
       expect(screen.getByLabelText('how to play')).toBeInTheDocument();
     });
 
-    it('does NOT render how to play button on leaderboard page', () => {
-      renderHeader('/leaderboard');
+    it('does NOT render how to play button on leaderboard or stats page', () => {
+      const { unmount } = renderHeader('/leaderboard');
+      expect(screen.queryByLabelText('how to play')).not.toBeInTheDocument();
+      unmount();
+
+      renderHeader('/stats');
       expect(screen.queryByLabelText('how to play')).not.toBeInTheDocument();
     });
 

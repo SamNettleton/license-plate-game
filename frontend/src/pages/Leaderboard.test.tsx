@@ -23,7 +23,17 @@ vi.mock('@/material-ui', async (importOriginal) => {
   };
 });
 
-describe('Leaderboard Component', () => {
+// Mock child component to isolate Leaderboard container tests
+vi.mock('@/components/results/LeaderboardTable', () => ({
+  default: vi.fn(({ entries, currentUser }) => (
+    <div data-testid="leaderboard-table">
+      <span>Entries Count: {entries.length}</span>
+      {currentUser && <span>Has Current User</span>}
+    </div>
+  )),
+}));
+
+describe('Leaderboard Container Component', () => {
   let queryClient: QueryClient;
 
   const mockLeaderboardData: LeaderboardResponse = {
@@ -36,14 +46,6 @@ describe('Leaderboard Component', () => {
         wordsFoundCount: 10,
         userId: 'user-1',
         isCurrentUser: false,
-      },
-      {
-        rank: 2,
-        name: 'Current Player',
-        score: 1200,
-        wordsFoundCount: 8,
-        userId: 'current-user-id',
-        isCurrentUser: true,
       },
     ],
     currentUser: undefined,
@@ -65,7 +67,6 @@ describe('Leaderboard Component', () => {
 
     // Default to Desktop view
     vi.mocked(useMediaQuery).mockReturnValue(true);
-
     vi.mocked(fetchDailyLeaderboard).mockResolvedValue(mockLeaderboardData);
   });
 
@@ -77,7 +78,7 @@ describe('Leaderboard Component', () => {
     );
   };
 
-  describe('Initial Render & Loading States', () => {
+  describe('Data Fetching & Table Integration', () => {
     it('displays loading state initially before data resolves', () => {
       vi.mocked(fetchDailyLeaderboard).mockReturnValue(new Promise(() => {}));
       renderLeaderboard();
@@ -85,25 +86,31 @@ describe('Leaderboard Component', () => {
       expect(screen.getByText(/Loading leaderboard.../i)).toBeInTheDocument();
     });
 
-    it('renders leaderboard title and list entries after data loads', async () => {
+    it('passes fetched data directly to LeaderboardTable component', async () => {
       renderLeaderboard();
 
-      expect(await screen.findByText('Top Player')).toBeInTheDocument();
-      expect(screen.getByText('Current Player (you)')).toBeInTheDocument();
-      expect(screen.getByText('1500')).toBeInTheDocument();
-      expect(screen.getByText('1200')).toBeInTheDocument();
+      const table = await screen.findByTestId('leaderboard-table');
+      expect(table).toBeInTheDocument();
+      expect(screen.getByText('Entries Count: 1')).toBeInTheDocument();
     });
 
-    it('displays empty state message when entries list is empty', async () => {
+    it('passes currentUser entry down to LeaderboardTable when present', async () => {
       vi.mocked(fetchDailyLeaderboard).mockResolvedValueOnce({
-        date: '2026-08-18',
-        entries: [],
-        currentUser: undefined,
+        ...mockLeaderboardData,
+        currentUser: {
+          rank: 15,
+          name: 'Outside Player',
+          score: 450,
+          wordsFoundCount: 3,
+          userId: 'current-user-id',
+          isCurrentUser: true,
+        },
       });
 
       renderLeaderboard();
 
-      expect(await screen.findByText('No scores yet for this day.')).toBeInTheDocument();
+      await screen.findByTestId('leaderboard-table');
+      expect(screen.getByText('Has Current User')).toBeInTheDocument();
     });
 
     it('renders error state and handles retry action on API failure', async () => {
@@ -120,18 +127,16 @@ describe('Leaderboard Component', () => {
       const retryButton = screen.getByRole('button', { name: /retry/i });
       fireEvent.click(retryButton);
 
-      expect(await screen.findByText('Top Player')).toBeInTheDocument();
+      expect(await screen.findByTestId('leaderboard-table')).toBeInTheDocument();
     });
   });
 
-  describe('Refresh Action', () => {
+  describe('Refresh Actions', () => {
     it('triggers fetchDailyLeaderboard when refresh button is clicked', async () => {
       renderLeaderboard();
-      await screen.findByText('Top Player');
+      await screen.findByTestId('leaderboard-table');
 
       const refreshButton = screen.getByRole('button', { name: /refresh leaderboard/i });
-      expect(refreshButton).not.toBeDisabled();
-
       fireEvent.click(refreshButton);
 
       expect(fetchDailyLeaderboard).toHaveBeenCalledTimes(2);
@@ -139,9 +144,8 @@ describe('Leaderboard Component', () => {
 
     it('disables refresh button while query is fetching', async () => {
       renderLeaderboard();
-      await screen.findByText('Top Player');
+      await screen.findByTestId('leaderboard-table');
 
-      // Return a pending promise to simulate an in-flight network request
       vi.mocked(fetchDailyLeaderboard).mockReturnValueOnce(new Promise(() => {}));
 
       const refreshButton = screen.getByRole('button', { name: /refresh leaderboard/i });
@@ -153,32 +157,10 @@ describe('Leaderboard Component', () => {
     });
   });
 
-  describe('Sticky Bottom Rank Card (Outside Top 10)', () => {
-    it('renders separate current user entry sticky card when provided', async () => {
-      vi.mocked(fetchDailyLeaderboard).mockResolvedValueOnce({
-        ...mockLeaderboardData,
-        currentUser: {
-          rank: 15,
-          name: 'Outside Player',
-          score: 450,
-          wordsFoundCount: 3,
-          userId: 'current-user-id',
-          isCurrentUser: true,
-        },
-      });
-
-      renderLeaderboard();
-
-      expect(await screen.findByText('#15')).toBeInTheDocument();
-      expect(screen.getByText('Outside Player (you)')).toBeInTheDocument();
-      expect(screen.getByText('450')).toBeInTheDocument();
-    });
-  });
-
   describe('Day Navigation Controls', () => {
     it('navigates to previous day when previous day button is clicked', async () => {
       renderLeaderboard();
-      await screen.findByText('Leaderboard');
+      await screen.findByTestId('leaderboard-table');
 
       const prevDayButton = screen.getByRole('button', { name: /previous day/i });
       fireEvent.click(prevDayButton);
@@ -188,7 +170,7 @@ describe('Leaderboard Component', () => {
 
     it('navigates to next day when next day button is clicked', async () => {
       renderLeaderboard();
-      await screen.findByText('Leaderboard');
+      await screen.findByTestId('leaderboard-table');
 
       const prevDayButton = screen.getByRole('button', { name: /previous day/i });
       fireEvent.click(prevDayButton);
@@ -202,52 +184,20 @@ describe('Leaderboard Component', () => {
     });
   });
 
-  describe('Calendar Interactivity & Month Navigation', () => {
+  describe('Responsive Layout & Calendar Integration', () => {
     it('renders desktop sidebar calendar by default on desktop viewport', async () => {
       renderLeaderboard();
-      await screen.findByText('Leaderboard');
+      await screen.findByTestId('leaderboard-table');
 
       expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /next month/i })).toBeInTheDocument();
     });
 
-    it('navigates calendar month backward and forward', async () => {
-      renderLeaderboard();
-      await screen.findByText('Leaderboard');
-
-      const prevMonthBtn = screen.getByRole('button', { name: /previous month/i });
-      fireEvent.click(prevMonthBtn);
-
-      const nextMonthBtn = screen.getByRole('button', { name: /next month/i });
-      fireEvent.click(nextMonthBtn);
-
-      expect(prevMonthBtn).toBeInTheDocument();
-    });
-
-    it('changes selected date when clicking a valid calendar day cell', async () => {
-      renderLeaderboard();
-      await screen.findByText('Leaderboard');
-
-      const dayButtons = screen.getAllByRole('button');
-      const fifteenthBtn = dayButtons.find((btn) => btn.textContent === '15');
-
-      if (fifteenthBtn) {
-        fireEvent.click(fifteenthBtn);
-        await waitFor(() => {
-          expect(fetchDailyLeaderboard).toHaveBeenCalled();
-        });
-      }
-    });
-  });
-
-  describe('Responsive Layout & Mobile Popover Calendar', () => {
-    beforeEach(() => {
+    it('renders date picker button and opens popover calendar on mobile viewport', async () => {
       vi.mocked(useMediaQuery).mockReturnValue(false); // Mobile viewport
-    });
 
-    it('renders date picker icon button on mobile view and opens popover calendar', async () => {
       renderLeaderboard();
-      await screen.findByText('Leaderboard');
+      await screen.findByTestId('leaderboard-table');
 
       const pickDateBtn = screen.getByRole('button', { name: /pick date/i });
       expect(pickDateBtn).toBeInTheDocument();

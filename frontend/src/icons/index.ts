@@ -15,3 +15,4 @@ export { default as TrophyIcon } from '@mui/icons-material/EmojiEvents';
 export { default as ChevronRightIcon } from '@mui/icons-material/ChevronRight';
 export { default as ArrowBackIcon } from '@mui/icons-material/ArrowBackIosNew';
 export { default as ArrowForwardIcon } from '@mui/icons-material/ArrowForwardIos';
+export { default as CalendarIcon } from '@mui/icons-material/CalendarMonth';
