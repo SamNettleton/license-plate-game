@@ -28,14 +28,6 @@ async def test_get_daily_stats_live_window(client, db):
         },
     )
 
-    # User 1: "cat" (3 chars, 10 pts), "house" (5 chars, 20 pts) -> 2 words, avg length 4.0, sum points 30.0
-    # User 2: "python" (6 chars, 50 pts) -> 1 word, avg length 6.0, sum points 50.0
-    # Global metrics:
-    # - total words across all users = 3
-    # - avg word length = (3 + 5 + 6) / 3 = 4.67
-    # - min word length = 3, max word length = 6
-    # - avg user total points = (30 + 50) / 2 = 40.0
-    # - avg words found per user = (2 + 1) / 2 = 1.5
     await db.execute(
         text(
             """
@@ -63,7 +55,6 @@ async def test_get_daily_stats_live_window(client, db):
     payload = response.json()
     assert payload["date"] == live_date.isoformat()
 
-    # Global stats assertions
     global_stats = payload["global_stats"]
     assert global_stats["avg_word_length"] == 4.67
     assert global_stats["min_word_length"] == 3
@@ -71,7 +62,6 @@ async def test_get_daily_stats_live_window(client, db):
     assert global_stats["total_points"] == 40.0
     assert global_stats["words_found_count"] == 1.5
 
-    # User-specific stats assertions
     user_stats = payload["user_stats"]
     assert user_stats is not None
     assert user_stats["avg_word_length"] == 4.0
@@ -102,14 +92,6 @@ async def test_get_daily_stats_historical_summary(client, db):
         },
     )
 
-    # User 1: words ["code", "test"] (2 words), points_earned = 100
-    # User 2: words ["fastapi"] (1 word), points_earned = 200
-    # Global metrics:
-    # - total words = 3
-    # - avg word length = (4 + 4 + 7) / 3 = 5.0
-    # - min word length = 4, max word length = 7
-    # - avg user points = (100 + 200) / 2 = 150.0
-    # - avg words found per user = (2 + 1) / 2 = 1.5
     await db.execute(
         text(
             """
@@ -144,7 +126,6 @@ async def test_get_daily_stats_historical_summary(client, db):
     payload = response.json()
     assert payload["date"] == historical_date.isoformat()
 
-    # Global stats assertions
     global_stats = payload["global_stats"]
     assert global_stats["avg_word_length"] == 5.0
     assert global_stats["min_word_length"] == 4
@@ -152,21 +133,66 @@ async def test_get_daily_stats_historical_summary(client, db):
     assert global_stats["total_points"] == 150.0
     assert global_stats["words_found_count"] == 1.5
 
-    # User stats assertions
+    # Corrected assertion: hist-user-1 earned 100 points
     user_stats = payload["user_stats"]
     assert user_stats is not None
     assert user_stats["avg_word_length"] == 4.0
     assert user_stats["min_word_length"] == 4
     assert user_stats["max_word_length"] == 4
-    assert user_stats["total_points"] == 200.0
+    assert user_stats["total_points"] == 100.0
     assert user_stats["words_found_count"] == 2.0
+
+
+@pytest.mark.asyncio
+async def test_get_daily_stats_historical_multi_word_points_accuracy(client, db):
+    """Verifies that historical user points match points_earned exactly without multiplication from words_found array length."""
+    historical_date = date(2026, 8, 10)
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES ('multi-word-user', 'MultiWord')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    )
+
+    # User with 5 words found and 42 total points
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
+            VALUES ('multi-word-user', :target_date, 42, :words)
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {
+            "target_date": historical_date,
+            "words": ["apple", "banana", "cherry", "date", "elderberry"],
+        },
+    )
+    await db.flush()
+
+    with patch("router.stats.datetime") as mock_datetime:
+        mock_datetime.now.return_value.date.return_value = TEST_TODAY
+        mock_datetime.strptime = datetime.strptime
+
+        response = await client.get(
+            "/api/stats/daily",
+            params={"date": historical_date.isoformat(), "user_id": "multi-word-user"},
+        )
+
+    assert response.status_code == 200
+    user_stats = response.json()["user_stats"]
+    assert user_stats is not None
+    assert user_stats["words_found_count"] == 5.0
+    assert user_stats["total_points"] == 42.0
 
 
 @pytest.mark.asyncio
 async def test_get_daily_stats_no_user_id_returns_null_user_stats(client, db):
     live_date = date(2026, 8, 18)
 
-    # Insert user first to satisfy FK constraint
     await db.execute(
         text(
             """

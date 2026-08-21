@@ -76,7 +76,7 @@ async def get_daily_stats(
             user_specific_row = (await db.execute(user_query)).mappings().one_or_none()
 
     else:
-        # CTE for unnesting words per user
+        # Global stats query for historical records
         words_cte = (
             select(
                 DailyUserSummary.user_id,
@@ -89,14 +89,12 @@ async def get_daily_stats(
 
         cte_word_len = func.length(words_cte.c.word)
 
-        # Average total points per user for historical data
         global_user_avg_points = (
             select(func.coalesce(func.avg(DailyUserSummary.points_earned), 0))
             .where(DailyUserSummary.date == parsed_date)
             .scalar_subquery()
         )
 
-        # Average words found per user for historical data
         global_user_avg_words = (
             select(
                 func.coalesce(
@@ -119,18 +117,27 @@ async def get_daily_stats(
 
         user_specific_row = None
         if user_id:
-            user_query = select(
-                func.coalesce(func.avg(cte_word_len), 0).label("avg_word_length"),
-                func.coalesce(func.min(cte_word_len), 0).label("min_word_length"),
-                func.coalesce(func.max(cte_word_len), 0).label("max_word_length"),
-                func.coalesce(func.sum(words_cte.c.points_earned), 0).label("total_points"),
-                func.count(words_cte.c.word).label("words_found_count"),
-            ).where(words_cte.c.user_id == user_id)
+            user_summary = (
+                await db.execute(
+                    select(DailyUserSummary).where(
+                        DailyUserSummary.date == parsed_date,
+                        DailyUserSummary.user_id == user_id,
+                    )
+                )
+            ).scalar_one_or_none()
 
-            user_specific_row = (await db.execute(user_query)).mappings().one_or_none()
+            if user_summary and user_summary.words_found:
+                word_lengths = [len(w) for w in user_summary.words_found]
+                user_specific_row = {
+                    "avg_word_length": sum(word_lengths) / len(word_lengths),
+                    "min_word_length": min(word_lengths),
+                    "max_word_length": max(word_lengths),
+                    "total_points": user_summary.points_earned,
+                    "words_found_count": len(user_summary.words_found),
+                }
 
     def format_stats_payload(row):
-        if not row or float(row["words_found_count"]) == 0:
+        if not row or row["words_found_count"] is None or float(row["words_found_count"]) == 0:
             return {
                 "avg_word_length": 0.0,
                 "min_word_length": 0,
@@ -140,11 +147,11 @@ async def get_daily_stats(
             }
 
         return {
-            "avg_word_length": round(float(row["avg_word_length"]), 2),
-            "min_word_length": int(row["min_word_length"]),
-            "max_word_length": int(row["max_word_length"]),
-            "total_points": round(float(row["total_points"]), 1),
-            "words_found_count": round(float(row["words_found_count"]), 1),
+            "avg_word_length": round(float(row["avg_word_length"] or 0), 2),
+            "min_word_length": int(row["min_word_length"] or 0),
+            "max_word_length": int(row["max_word_length"] or 0),
+            "total_points": round(float(row["total_points"] or 0), 1),
+            "words_found_count": round(float(row["words_found_count"] or 0), 1),
         }
 
     return {
