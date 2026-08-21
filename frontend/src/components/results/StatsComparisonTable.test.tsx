@@ -32,7 +32,7 @@ describe('StatsComparison Component', () => {
       );
 
       expect(screen.getByText('YOU')).toBeInTheDocument();
-      expect(screen.getByText('AVG.')).toBeInTheDocument();
+      expect(screen.getByText('GLOBAL')).toBeInTheDocument();
     });
 
     it('renders all category labels', () => {

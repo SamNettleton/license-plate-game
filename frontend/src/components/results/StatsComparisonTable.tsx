@@ -59,7 +59,7 @@ export default function StatsComparison({ stats }: StatsComparisonProps) {
             <Typography sx={columnHeaderStyles}>YOU</Typography>
           </Box>
           <Box sx={avgColumnHeaderStyles}>
-            <Typography sx={columnHeaderStyles}>AVG.</Typography>
+            <Typography sx={columnHeaderStyles}>GLOBAL</Typography>
           </Box>
         </Box>
       </Box>
