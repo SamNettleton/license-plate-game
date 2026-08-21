@@ -32,10 +32,10 @@ describe('StatsComparison Component', () => {
       );
 
       expect(screen.getByText('YOU')).toBeInTheDocument();
-      expect(screen.getByText('AVG.')).toBeInTheDocument();
+      expect(screen.getByText('GLOBAL')).toBeInTheDocument();
     });
 
-    it('renders all category labels', () => {
+    it('renders all category labels and average sublabels', () => {
       render(
         <StatsComparison
           stats={{
@@ -45,11 +45,15 @@ describe('StatsComparison Component', () => {
         />,
       );
 
-      expect(screen.getByText('Words Found')).toBeInTheDocument();
       expect(screen.getByText('Points')).toBeInTheDocument();
-      expect(screen.getByText('Avg. Length')).toBeInTheDocument();
+      expect(screen.getByText('Words Found')).toBeInTheDocument();
+      expect(screen.getByText('Word Length')).toBeInTheDocument();
       expect(screen.getByText('Shortest')).toBeInTheDocument();
       expect(screen.getByText('Longest')).toBeInTheDocument();
+
+      // Verify the three 'Average' sublabels are present
+      const averageSublabels = screen.getAllByText('Average');
+      expect(averageSublabels).toHaveLength(3);
     });
   });
 
@@ -65,15 +69,15 @@ describe('StatsComparison Component', () => {
       );
 
       // User stats values
-      expect(screen.getByText('12')).toBeInTheDocument(); // Words found
       expect(screen.getByText('85')).toBeInTheDocument(); // Points
+      expect(screen.getByText('12')).toBeInTheDocument(); // Words found
       expect(screen.getByText('5.2')).toBeInTheDocument(); // Avg length
       expect(screen.getByText('4')).toBeInTheDocument(); // Shortest word
       expect(screen.getByText('8')).toBeInTheDocument(); // Longest word
 
       // Global stats values
-      expect(screen.getByText('25')).toBeInTheDocument();
       expect(screen.getByText('150.5')).toBeInTheDocument();
+      expect(screen.getByText('25')).toBeInTheDocument();
       expect(screen.getByText('4.8')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument();
       expect(screen.getByText('10')).toBeInTheDocument();
@@ -124,7 +128,7 @@ describe('StatsComparison Component', () => {
         />,
       );
 
-      // Shortest & Longest for both YOU and AVG should fall back to '-' (4 total dashes)
+      // Shortest & Longest for both YOU and GLOBAL should fall back to '-' (4 total dashes)
       const dashes = screen.getAllByText('-');
       expect(dashes).toHaveLength(4);
 

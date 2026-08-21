@@ -23,29 +23,34 @@ export default function StatsComparison({ stats }: StatsComparisonProps) {
 
   const rows = [
     {
-      label: 'Words Found',
-      you: user ? user.wordsFoundCount : '-',
-      avg: global.wordsFoundCount,
-    },
-    {
       label: 'Points',
+      sublabel: 'Average',
       you: user ? user.totalPoints : '-',
-      avg: global.totalPoints,
+      global: global.totalPoints,
     },
     {
-      label: 'Avg. Length',
+      label: 'Words Found',
+      sublabel: 'Average',
+      you: user ? user.wordsFoundCount : '-',
+      global: global.wordsFoundCount,
+    },
+    {
+      label: 'Word Length',
+      sublabel: 'Average',
       you: user ? user.avgWordLength : '-',
-      avg: global.avgWordLength,
+      global: global.avgWordLength,
     },
     {
       label: 'Shortest',
+      sublabel: null,
       you: user && user.minWordLength > 0 ? user.minWordLength : '-',
-      avg: global.minWordLength > 0 ? global.minWordLength : '-',
+      global: global.minWordLength > 0 ? global.minWordLength : '-',
     },
     {
       label: 'Longest',
+      sublabel: null,
       you: user && user.maxWordLength > 0 ? user.maxWordLength : '-',
-      avg: global.maxWordLength > 0 ? global.maxWordLength : '-',
+      global: global.maxWordLength > 0 ? global.maxWordLength : '-',
     },
   ];
 
@@ -58,8 +63,8 @@ export default function StatsComparison({ stats }: StatsComparisonProps) {
           <Box sx={userColumnHeaderStyles}>
             <Typography sx={columnHeaderStyles}>YOU</Typography>
           </Box>
-          <Box sx={avgColumnHeaderStyles}>
-            <Typography sx={columnHeaderStyles}>AVG.</Typography>
+          <Box sx={globalColumnHeaderStyles}>
+            <Typography sx={columnHeaderStyles}>GLOBAL</Typography>
           </Box>
         </Box>
       </Box>
@@ -68,15 +73,18 @@ export default function StatsComparison({ stats }: StatsComparisonProps) {
       <Box sx={rowListStyles}>
         {rows.map((row) => (
           <Box key={row.label} sx={dataRowStyles}>
-            {/* Category Label */}
+            {/* Category Label & Sublabel */}
             <Box sx={labelColumnStyles}>
               <Typography sx={categoryLabelStyles}>{row.label}</Typography>
+              {row.sublabel && <Typography sx={categorySublabelStyles}>{row.sublabel}</Typography>}
             </Box>
 
             {/* Stat Values */}
             <Box sx={valueGroupStyles}>
               <Box sx={userValueColumnStyles}>{renderStatValue(row.you, userValueStyles)}</Box>
-              <Box sx={avgValueColumnStyles}>{renderStatValue(row.avg, globalValueStyles)}</Box>
+              <Box sx={globalValueColumnStyles}>
+                {renderStatValue(row.global, globalValueStyles)}
+              </Box>
             </Box>
           </Box>
         ))}
@@ -106,7 +114,7 @@ const headerRowStyles = {
 const rowListStyles = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 2,
+  gap: 1.5,
 };
 
 const dataRowStyles = {
@@ -119,6 +127,8 @@ const dataRowStyles = {
 const labelColumnStyles = {
   flex: 1,
   pr: 2,
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 const valueGroupStyles = {
@@ -132,7 +142,7 @@ const userColumnHeaderStyles = {
   minWidth: 56,
 };
 
-const avgColumnHeaderStyles = {
+const globalColumnHeaderStyles = {
   textAlign: 'right',
   minWidth: 64,
 };
@@ -142,7 +152,7 @@ const userValueColumnStyles = {
   minWidth: 56,
 };
 
-const avgValueColumnStyles = {
+const globalValueColumnStyles = {
   textAlign: 'right',
   minWidth: 64,
 };
@@ -151,7 +161,15 @@ const categoryLabelStyles = {
   fontSize: '0.9rem',
   fontWeight: 600,
   color: 'text.primary',
-  lineHeight: 1.2,
+  lineHeight: 1.1,
+};
+
+const categorySublabelStyles = {
+  fontSize: '0.6875rem',
+  fontWeight: 500,
+  color: 'text.secondary',
+  lineHeight: 1.1,
+  mt: 0.25,
 };
 
 const columnHeaderStyles = {
