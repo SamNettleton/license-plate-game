@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -24,18 +25,40 @@ export default function Stats() {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const { settings } = useSettings();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
 
   const maxActiveDate = React.useMemo(() => getLatestActiveGlobalDate(), []);
   const minActiveDate = React.useMemo(() => toDateOnly(EARLIEST_ACTIVE_DATE), []);
 
   const [selectedDate, setSelectedDate] = React.useState(() => {
-    const localToday = toDateOnly(new Date());
-    if (localToday > maxActiveDate) return maxActiveDate;
-    if (localToday < minActiveDate) return minActiveDate;
-    return localToday;
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      const parsed = new Date(`${dateParam}T00:00:00`);
+      if (!isNaN(parsed.getTime())) {
+        const bounded = toDateOnly(parsed);
+        if (bounded >= minActiveDate && bounded <= maxActiveDate) {
+          return bounded;
+        }
+      }
+    }
+
+    const today = toDateOnly(new Date());
+    if (today > maxActiveDate) return maxActiveDate;
+    if (today < minActiveDate) return minActiveDate;
+    return today;
   });
   const [calendarAnchor, setCalendarAnchor] = React.useState<HTMLButtonElement | null>(null);
   const calendarOpen = Boolean(calendarAnchor);
+
+  React.useEffect(() => {
+    if (!searchParams.has('date')) {
+      setSearchParams(
+        { date: formatDateKey(selectedDate) },
+        { replace: true, state: location.state },
+      );
+    }
+  }, [searchParams, selectedDate, setSearchParams]);
 
   const handleOpenCalendar = (event: React.MouseEvent<HTMLButtonElement>) => {
     setCalendarAnchor(event.currentTarget);
@@ -46,20 +69,26 @@ export default function Stats() {
   };
 
   const handleSelectDate = (date: Date) => {
-    if (date < minActiveDate || date > maxActiveDate) return;
-    setSelectedDate(toDateOnly(date));
+    updateDate(date);
     handleCloseCalendar();
   };
 
   const moveByDays = (amount: number) => {
-    setSelectedDate((current) => {
-      const next = addDays(current, amount);
-      if (next < minActiveDate) return minActiveDate;
-      if (next > maxActiveDate) return maxActiveDate;
-      return next;
-    });
+    const nextDate = addDays(selectedDate, amount);
+    updateDate(nextDate);
     handleCloseCalendar();
   };
+
+  const updateDate = React.useCallback(
+    (date: Date) => {
+      const bounded = toDateOnly(date);
+      if (bounded < minActiveDate || bounded > maxActiveDate) return;
+
+      setSelectedDate(bounded);
+      setSearchParams({ date: formatDateKey(bounded) }, { replace: true, state: location.state });
+    },
+    [minActiveDate, maxActiveDate, setSearchParams],
+  );
 
   const selectedDateKey = formatDateKey(selectedDate);
 

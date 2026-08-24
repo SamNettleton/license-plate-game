@@ -160,6 +160,25 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
     }
   };
 
+  React.useEffect(() => {
+    if (!isModalOpen) return;
+
+    window.history.pushState({ modalOpen: true }, '');
+
+    const handlePopState = () => {
+      setIsModalOpen(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (window.history.state?.modalOpen) {
+        window.history.back();
+      }
+    };
+  }, [isModalOpen]);
+
   return (
     <Grid container spacing={2} sx={{ height: '100%' }}>
       <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column' }}>
