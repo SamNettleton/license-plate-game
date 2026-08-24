@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import Leaderboard from './Leaderboard';
 import { fetchDailyLeaderboard, type LeaderboardResponse } from '@/api/leaderboardService';
 import { useSettings } from '@/context/SettingsContext';
@@ -70,10 +71,18 @@ describe('Leaderboard Container Component', () => {
     vi.mocked(fetchDailyLeaderboard).mockResolvedValue(mockLeaderboardData);
   });
 
-  const renderLeaderboard = () => {
+  const renderLeaderboard = (initialEntries = ['/leaderboard'], initialLocationState?: any) => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <Leaderboard />
+        <MemoryRouter
+          initialEntries={
+            typeof initialEntries[0] === 'string'
+              ? initialEntries.map((path) => ({ pathname: path, state: initialLocationState }))
+              : initialEntries
+          }
+        >
+          <Leaderboard />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
   };

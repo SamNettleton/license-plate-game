@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Stats from './Stats';
 import * as statsService from '@/api/statsService';
@@ -72,10 +73,18 @@ describe('Stats Page Component', () => {
     vi.mocked(statsService.fetchDailyStats).mockResolvedValue(mockStatsData);
   });
 
-  const renderStats = () => {
+  const renderStats = (initialEntries = ['/stats'], initialLocationState?: any) => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <Stats />
+        <MemoryRouter
+          initialEntries={
+            typeof initialEntries[0] === 'string'
+              ? initialEntries.map((path) => ({ pathname: path, state: initialLocationState }))
+              : initialEntries
+          }
+        >
+          <Stats />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
   };

@@ -52,12 +52,30 @@ export default function Header() {
 
   const handleLeaderboardClick = () => {
     const origin = (location.state as { origin?: string })?.origin || location.pathname;
-    navigate('/leaderboard', { state: { origin } });
+    navigate(
+      {
+        pathname: '/leaderboard',
+        search: location.search,
+      },
+      {
+        state: { origin: origin === '/leaderboard' ? '/' : origin },
+        replace: isStatsPage,
+      },
+    );
   };
 
   const handleStatsClick = () => {
     const origin = (location.state as { origin?: string })?.origin || location.pathname;
-    navigate('/stats', { state: { origin } });
+    navigate(
+      {
+        pathname: '/stats',
+        search: location.search,
+      },
+      {
+        state: { origin: origin === '/stats' ? '/' : origin },
+        replace: isLeaderboardPage,
+      },
+    );
   };
 
   const originPath = (location.state as { origin?: string } | null)?.origin;
