@@ -22,6 +22,7 @@ function TestConsumer() {
       <span data-testid="player-id">{settings.playerId}</span>
       <span data-testid="display-name">{settings.displayName}</span>
       <span data-testid="is-dark">{settings.isDarkTheme.toString()}</span>
+      <span data-testid="display-time-option">{settings.displayTimeOption}</span>
       <button
         onClick={() => updateSettings({ displayName: 'Updated Name' })}
         data-testid="update-name-btn"
@@ -30,6 +31,12 @@ function TestConsumer() {
       </button>
       <button onClick={() => updateSettings({ isDarkTheme: false })} data-testid="toggle-theme-btn">
         Toggle Theme
+      </button>
+      <button
+        onClick={() => updateSettings({ displayTimeOption: 'gameAndResults' })}
+        data-testid="update-time-option-btn"
+      >
+        Set Game and Results
       </button>
     </div>
   );
@@ -69,11 +76,13 @@ describe('SettingsContext', () => {
 
       expect(screen.getByTestId('display-name')).toHaveTextContent('Anonymous Traveler');
       expect(screen.getByTestId('is-dark')).toHaveTextContent('true');
+      expect(screen.getByTestId('display-time-option')).toHaveTextContent('resultsOnly');
       expect(screen.getByTestId('player-id').textContent).not.toBe('');
 
       const savedStorage = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
       expect(savedStorage.displayName).toBe('Anonymous Traveler');
       expect(savedStorage.isDarkTheme).toBe(true);
+      expect(savedStorage.displayTimeOption).toBe('resultsOnly');
     });
 
     it('loads existing settings from localStorage if present', () => {
@@ -81,6 +90,7 @@ describe('SettingsContext', () => {
         playerId: 'existing-uuid-1234',
         displayName: 'Road Warrior',
         isDarkTheme: false,
+        displayTimeOption: 'gameAndResults',
       };
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(existingSettings));
 
@@ -93,6 +103,7 @@ describe('SettingsContext', () => {
       expect(screen.getByTestId('player-id')).toHaveTextContent('existing-uuid-1234');
       expect(screen.getByTestId('display-name')).toHaveTextContent('Road Warrior');
       expect(screen.getByTestId('is-dark')).toHaveTextContent('false');
+      expect(screen.getByTestId('display-time-option')).toHaveTextContent('gameAndResults');
     });
 
     it('recovers with fallback defaults if localStorage contains corrupted JSON', () => {
@@ -105,6 +116,7 @@ describe('SettingsContext', () => {
       );
 
       expect(screen.getByTestId('display-name')).toHaveTextContent('Anonymous Traveler');
+      expect(screen.getByTestId('display-time-option')).toHaveTextContent('resultsOnly');
       expect(screen.getByTestId('player-id').textContent).not.toBe('');
     });
   });
@@ -181,6 +193,20 @@ describe('SettingsContext', () => {
       expect(screen.getByTestId('display-name')).toHaveTextContent('Updated Name');
       const savedStorage = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
       expect(savedStorage.displayName).toBe('Updated Name');
+    });
+
+    it('updates displayTimeOption and persists to localStorage', () => {
+      render(
+        <SettingsProvider>
+          <TestConsumer />
+        </SettingsProvider>,
+      );
+
+      fireEvent.click(screen.getByTestId('update-time-option-btn'));
+
+      expect(screen.getByTestId('display-time-option')).toHaveTextContent('gameAndResults');
+      const savedStorage = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      expect(savedStorage.displayTimeOption).toBe('gameAndResults');
     });
 
     it('triggers syncUser when displayName changes', () => {

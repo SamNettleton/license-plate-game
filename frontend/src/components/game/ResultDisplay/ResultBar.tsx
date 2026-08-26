@@ -1,14 +1,16 @@
 import { Box, LinearProgress, Stack, Typography } from '@components';
 import { ChevronRightIcon } from '@icons';
 import { getMilestone } from '@/constants/game';
+import { formatTime } from '@/utils/formatters';
 
 type Props = {
   points: number;
   goalPoints: number;
+  elapsedSeconds?: number;
   onClick?: () => void;
 };
 
-export default function ResultDisplay({ points, goalPoints, onClick }: Props) {
+export default function ResultDisplay({ points, goalPoints, elapsedSeconds, onClick }: Props) {
   const currentPercentage = (points / goalPoints) * 100;
   const { label, color } = getMilestone(currentPercentage);
 
@@ -20,18 +22,30 @@ export default function ResultDisplay({ points, goalPoints, onClick }: Props) {
       aria-label="View tier breakdown"
       sx={resultBarStyles}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="caption" color={color} sx={{ fontWeight: 'bold' }}>
-          {label}
-        </Typography>
-
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          <Typography variant="body2" color="text.secondary" fontWeight={600}>
-            {points} / {goalPoints} pts
+      <Box sx={gridContainerStyles}>
+        <Box sx={leftColumnStyles}>
+          <Typography variant="caption" color={color} sx={{ fontWeight: 'bold' }}>
+            {label}
           </Typography>
-          <ChevronRightIcon fontSize="small" color="action" sx={{ opacity: 0.6 }} />
-        </Stack>
-      </Stack>
+        </Box>
+
+        <Box sx={centerColumnStyles}>
+          {elapsedSeconds !== undefined && (
+            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              {formatTime(elapsedSeconds)}
+            </Typography>
+          )}
+        </Box>
+
+        <Box sx={rightColumnStyles}>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              {points} / {goalPoints} pts
+            </Typography>
+            <ChevronRightIcon fontSize="small" color="action" sx={{ opacity: 0.6 }} />
+          </Stack>
+        </Box>
+      </Box>
 
       <LinearProgress
         variant="determinate"
@@ -80,4 +94,23 @@ const resultBarStyles = {
     outlineColor: 'primary.main',
     outlineOffset: 2,
   },
+};
+
+const gridContainerStyles = {
+  display: 'grid',
+  gridTemplateColumns: '1fr auto 1fr',
+  alignItems: 'center',
+  mb: 1,
+};
+
+const leftColumnStyles = {
+  justifySelf: 'start',
+};
+
+const centerColumnStyles = {
+  justifySelf: 'center',
+};
+
+const rightColumnStyles = {
+  justifySelf: 'end',
 };

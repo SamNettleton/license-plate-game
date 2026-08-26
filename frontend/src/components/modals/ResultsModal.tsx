@@ -28,6 +28,7 @@ type Props = {
   points: number;
   showShareButton: boolean;
   tierTimes: Record<string, number>;
+  displayTimes: boolean;
   onClose: () => void;
 };
 
@@ -46,6 +47,7 @@ export default function ResultsModal({
   points,
   showShareButton,
   tierTimes,
+  displayTimes,
   onClose,
 }: Props) {
   const [shareToastOpen, setShareToastOpen] = React.useState(false);
@@ -124,9 +126,11 @@ export default function ResultsModal({
             <Typography variant="body2" color="text.secondary">
               {points} / {goalPoints} pts · {goalPoints > 0 ? Math.round(currentPercentage) : 0}%
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Total time: {formatTime(elapsedSeconds)}
-            </Typography>
+            {displayTimes && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Total time: {formatTime(elapsedSeconds)}
+              </Typography>
+            )}
           </Box>
           <Box sx={{ ml: 'auto' }}>
             <Typography variant="caption" sx={plateStyles}>
@@ -167,31 +171,33 @@ export default function ResultsModal({
                   </Box>
                 </Box>
 
-                <Box sx={timeContainerStyles}>
-                  {isFutureTier ? (
-                    <Typography variant="body2" color="text.disabled" sx={monoFontStyles}>
-                      —
-                    </Typography>
-                  ) : (
-                    <>
-                      {/* Primary stat: Split duration spent in this tier */}
-                      <Typography
-                        variant="body2"
-                        fontWeight="bold"
-                        sx={splitTimeStyles(isCurrentTier)}
-                      >
-                        {formatTime(Math.max(0, splitDuration))}
+                {displayTimes && (
+                  <Box sx={timeContainerStyles}>
+                    {isFutureTier ? (
+                      <Typography variant="body2" color="text.disabled" sx={monoFontStyles}>
+                        —
                       </Typography>
-
-                      {/* Secondary stat: Total elapsed time milestone (only shown after tier 1) */}
-                      {index > 0 && (
-                        <Typography variant="caption" color="text.secondary" sx={monoFontStyles}>
-                          Total {formatTime(cumulativeTime)}
+                    ) : (
+                      <>
+                        {/* Primary stat: Split duration spent in this tier */}
+                        <Typography
+                          variant="body2"
+                          fontWeight="bold"
+                          sx={splitTimeStyles(isCurrentTier)}
+                        >
+                          {formatTime(Math.max(0, splitDuration))}
                         </Typography>
-                      )}
-                    </>
-                  )}
-                </Box>
+
+                        {/* Secondary stat: Total elapsed time milestone (only shown after tier 1) */}
+                        {index > 0 && (
+                          <Typography variant="caption" color="text.secondary" sx={monoFontStyles}>
+                            Total {formatTime(cumulativeTime)}
+                          </Typography>
+                        )}
+                      </>
+                    )}
+                  </Box>
+                )}
               </Box>
             );
           })}

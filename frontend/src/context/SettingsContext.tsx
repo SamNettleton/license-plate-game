@@ -3,9 +3,12 @@ import * as React from 'react';
 import { useColorScheme } from '@components';
 import { syncUser } from '@/api/userService';
 
+export type DisplayTimeOption = 'nowhere' | 'gameAndResults' | 'resultsOnly';
+
 export type UserSettings = {
   playerId: string;
   displayName: string;
+  displayTimeOption: DisplayTimeOption;
   isDarkTheme: boolean;
 };
 
@@ -21,6 +24,7 @@ const SETTINGS_KEY = 'license_plate_game_settings';
 const DEFAULT_SETTINGS: UserSettings = {
   playerId: '',
   displayName: 'Anonymous Traveler',
+  displayTimeOption: 'resultsOnly',
   isDarkTheme: true,
 };
 

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Practice from './Practice';
 import * as plateService from '../api/plateService';
+import { SettingsProvider } from '@/context/SettingsContext';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock plateService API
@@ -24,7 +25,9 @@ const queryClient = new QueryClient({
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  <QueryClientProvider client={queryClient}>
+    <SettingsProvider>{children}</SettingsProvider>
+  </QueryClientProvider>
 );
 
 describe('Practice Page', () => {
