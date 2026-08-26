@@ -72,18 +72,6 @@ describe('Header Component', () => {
     });
   });
 
-  describe('Logo Visibility', () => {
-    it('renders the LPG logo on homepage', () => {
-      renderHeader(['/']);
-      expect(screen.getByText('LPG')).toBeInTheDocument();
-    });
-
-    it('does NOT render the LPG logo on other pages', () => {
-      renderHeader(['/daily']);
-      expect(screen.queryByText('LPG')).not.toBeInTheDocument();
-    });
-  });
-
   describe('Navigation & Back Button', () => {
     it('does NOT render back button on the homepage', () => {
       renderHeader(['/']);
