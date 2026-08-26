@@ -31,6 +31,7 @@ describe('SettingsModal Component', () => {
         playerId: 'mock-uuid-1234',
         displayName: 'Road Tripper',
         isDarkTheme: true,
+        displayTimeOption: 'resultsOnly',
       },
       updateSettings: mockUpdateSettings,
     });
@@ -46,7 +47,8 @@ describe('SettingsModal Component', () => {
       render(<SettingsModal {...defaultProps} />);
       expect(screen.getByRole('heading', { name: /settings/i })).toBeInTheDocument();
       expect(screen.getByRole('textbox')).toBeInTheDocument();
-      expect(screen.getByRole('checkbox')).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /display time/i })).toBeInTheDocument();
+      expect(screen.getByRole('checkbox', { name: /dark mode/i })).toBeInTheDocument();
     });
   });
 
@@ -103,7 +105,12 @@ describe('SettingsModal Component', () => {
 
       it('does not display the character counter when below the threshold', () => {
         (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
-          settings: { playerId: 'mock-uuid-1234', displayName: 'Short', isDarkTheme: true },
+          settings: {
+            playerId: 'mock-uuid-1234',
+            displayName: 'Short',
+            isDarkTheme: true,
+            displayTimeOption: 'resultsOnly',
+          },
           updateSettings: mockUpdateSettings,
         });
 
@@ -118,6 +125,7 @@ describe('SettingsModal Component', () => {
             playerId: 'mock-uuid-1234',
             displayName: fifteenChars,
             isDarkTheme: true,
+            displayTimeOption: 'resultsOnly',
           },
           updateSettings: mockUpdateSettings,
         });
@@ -134,6 +142,44 @@ describe('SettingsModal Component', () => {
 
         expect(screen.getByText('18/20')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('display time select', () => {
+    it('reflects current display time setting state', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const select = screen.getByRole('combobox', { name: /display time/i });
+      expect(select).toHaveTextContent('In Results Only');
+    });
+
+    it('falls back to "In Results Only" if displayTimeOption is missing or undefined', () => {
+      (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
+        settings: {
+          playerId: 'mock-uuid-1234',
+          displayName: 'Road Tripper',
+          isDarkTheme: true,
+          displayTimeOption: undefined,
+        },
+        updateSettings: mockUpdateSettings,
+      });
+
+      render(<SettingsModal {...defaultProps} />);
+      const select = screen.getByRole('combobox', { name: /display time/i });
+      expect(select).toHaveTextContent('In Results Only');
+    });
+
+    it('calls updateSettings with selected option when changed', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const select = screen.getByRole('combobox', { name: /display time/i });
+
+      // Open the select dropdown
+      fireEvent.mouseDown(select);
+
+      // Select 'gameAndResults' option
+      const option = screen.getByRole('option', { name: /in game and results/i });
+      fireEvent.click(option);
+
+      expect(mockUpdateSettings).toHaveBeenCalledWith({ displayTimeOption: 'gameAndResults' });
     });
   });
 

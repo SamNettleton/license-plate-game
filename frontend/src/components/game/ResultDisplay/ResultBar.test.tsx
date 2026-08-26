@@ -3,8 +3,8 @@ import { describe, it, expect, vi } from 'vitest';
 import ResultBar from './ResultBar';
 
 describe('ResultBar Component', () => {
-  const renderBar = (points: number, goalPoints: number) =>
-    render(<ResultBar points={points} goalPoints={goalPoints} />);
+  const renderBar = (points: number, goalPoints: number, elapsedSeconds?: number) =>
+    render(<ResultBar points={points} goalPoints={goalPoints} elapsedSeconds={elapsedSeconds} />);
 
   describe('Milestone Labels', () => {
     it('shows "Parked" at 0 points', () => {
@@ -51,6 +51,28 @@ describe('ResultBar Component', () => {
     it('renders the points fraction correctly', () => {
       renderBar(120, 400);
       expect(screen.getByText('120 / 400 pts')).toBeInTheDocument();
+    });
+  });
+
+  describe('Elapsed Time Display', () => {
+    it('renders formatted elapsed time when elapsedSeconds is provided', () => {
+      renderBar(100, 300, 125); // 2 minutes, 5 seconds
+      expect(screen.getByText('2:05')).toBeInTheDocument();
+    });
+
+    it('formats single-digit seconds with leading zero', () => {
+      renderBar(100, 300, 63); // 1 minute, 3 seconds
+      expect(screen.getByText('1:03')).toBeInTheDocument();
+    });
+
+    it('renders 0:00 when elapsedSeconds is 0', () => {
+      renderBar(100, 300, 0);
+      expect(screen.getByText('0:00')).toBeInTheDocument();
+    });
+
+    it('does not render time display when elapsedSeconds is undefined', () => {
+      renderBar(100, 300);
+      expect(screen.queryByText(/\d+:\d{2}/)).not.toBeInTheDocument();
     });
   });
 

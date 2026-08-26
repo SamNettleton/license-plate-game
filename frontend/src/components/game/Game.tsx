@@ -10,6 +10,7 @@ import { gameReducer, createInitialState } from './gameReducer';
 import { GameMode, STORAGE_KEY } from '@/constants/game';
 import { useQueryClient } from '@tanstack/react-query';
 import { faro } from '@/faro';
+import { useSettings } from '@/context/SettingsContext';
 
 type SavedProgress = {
   solutions: string[];
@@ -39,6 +40,10 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
   const [visibility, setVisibility] = React.useState(() =>
     typeof document !== 'undefined' ? document.visibilityState : 'visible',
   );
+
+  const { settings } = useSettings();
+  const showInGameTimer = settings.displayTimeOption === 'gameAndResults';
+  const showInResultsTimer = settings.displayTimeOption !== 'nowhere';
 
   React.useEffect(() => {
     queryClient.setQueryData(['active-game-tier-times'], {
@@ -191,6 +196,7 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
           <ResultBar
             points={state.points}
             goalPoints={goalPoints}
+            elapsedSeconds={showInGameTimer ? state.elapsedSeconds : undefined}
             onClick={() => setIsModalOpen(true)}
           ></ResultBar>
           <Box sx={{ position: 'relative', mt: 1 }}>
@@ -217,6 +223,7 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
         <ResultBar
           points={state.points}
           goalPoints={goalPoints}
+          elapsedSeconds={showInGameTimer ? state.elapsedSeconds : undefined}
           onClick={() => setIsModalOpen(true)}
         ></ResultBar>
         <ResultDisplay solutions={state.solutions}></ResultDisplay>
@@ -229,6 +236,7 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
         points={state.points}
         showShareButton={mode === GameMode.DAILY}
         tierTimes={state.tierTimes}
+        displayTimes={showInResultsTimer}
         onClose={() => setIsModalOpen(false)}
       />
     </Grid>

@@ -5,10 +5,16 @@ import { GameMode } from '@/constants/game';
 import * as wordService from '@/api/wordService';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
+import { useSettings } from '@/context/SettingsContext';
 
 // Mock wordService API calls
 vi.mock('@/api/wordService', () => ({
   checkWordValidity: vi.fn(),
+}));
+
+// Mock SettingsContext
+vi.mock('@/context/SettingsContext', () => ({
+  useSettings: vi.fn(),
 }));
 
 // Mock Grafana Faro telemetry import
@@ -32,18 +38,23 @@ describe('Game Component', () => {
         queries: { retry: false },
       },
     });
+
+    (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
+      settings: {
+        playerId: 'mock-uuid-1234',
+        displayName: 'Road Tripper',
+        isDarkTheme: true,
+        displayTimeOption: 'resultsOnly',
+      },
+      updateSettings: vi.fn(),
+    });
   });
 
   describe('Initial Render', () => {
     it('renders without crashing and displays initial plate and progress', () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <Game
-            plate="LPG"
-            solutionsCount={10}
-            goalPoints={100}
-            mode={GameMode.DAILY}
-          />
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
         </QueryClientProvider>,
       );
 
@@ -51,6 +62,42 @@ describe('Game Component', () => {
 
       const scoreElements = screen.getAllByText(/0.*\/.*100/i);
       expect(scoreElements[0]).toBeInTheDocument();
+    });
+  });
+
+  describe('Timer Settings & Display Controls', () => {
+    it('passes elapsedSeconds to ResultBar when displayTimeOption is "gameAndResults"', () => {
+      (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
+        settings: {
+          displayTimeOption: 'gameAndResults',
+        },
+        updateSettings: vi.fn(),
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+        </QueryClientProvider>,
+      );
+
+      expect(screen.getAllByText('0:00').length).toBeGreaterThan(0);
+    });
+
+    it('hides elapsedSeconds in ResultBar when displayTimeOption is "resultsOnly"', () => {
+      (useSettings as ReturnType<typeof vi.fn>).mockReturnValue({
+        settings: {
+          displayTimeOption: 'resultsOnly',
+        },
+        updateSettings: vi.fn(),
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+        </QueryClientProvider>,
+      );
+
+      expect(screen.queryByText('0:00')).not.toBeInTheDocument();
     });
   });
 
@@ -66,12 +113,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game
-            plate="LPG"
-            solutionsCount={10}
-            goalPoints={100}
-            mode={GameMode.DAILY}
-          />
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
         </QueryClientProvider>,
       );
 
@@ -133,12 +175,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game
-            plate="LPG"
-            solutionsCount={10}
-            goalPoints={100}
-            mode={GameMode.DAILY}
-          />
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
         </QueryClientProvider>,
       );
 
@@ -168,12 +205,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game
-            plate="FAL"
-            solutionsCount={10}
-            goalPoints={100}
-            mode={GameMode.DAILY}
-          />
+          <Game plate="FAL" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
         </QueryClientProvider>,
       );
 

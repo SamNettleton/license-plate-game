@@ -14,10 +14,14 @@ import {
   useTheme,
   useMediaQuery,
   Slide,
+  FormControl,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@components';
 import type { TransitionProps } from '@mui/material/transitions';
 import { CloseIcon } from '@icons';
-import { useSettings } from '@/context/SettingsContext';
+import { useSettings, DisplayTimeOption } from '@/context/SettingsContext';
 
 type Props = {
   open: boolean;
@@ -58,6 +62,10 @@ export default function SettingsModal({ open, maxDisplayNameLength = 20, onClose
 
   const handleClear = () => {
     setDisplayName('');
+  };
+
+  const handleDisplayTimeChange = (e: SelectChangeEvent<DisplayTimeOption>) => {
+    updateSettings({ displayTimeOption: e.target.value as DisplayTimeOption });
   };
 
   const isApproachingLimit = displayName.length >= maxDisplayNameLength - 5;
@@ -139,6 +147,30 @@ export default function SettingsModal({ open, maxDisplayNameLength = 20, onClose
           <Divider />
 
           <Box sx={settingRowStyles}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold">
+                Display Time
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Control where the elapsed timer is visible
+              </Typography>
+            </Box>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <Select
+                value={settings.displayTimeOption ?? 'resultsOnly'}
+                onChange={handleDisplayTimeChange}
+                inputProps={{ 'aria-label': 'Display Time' }}
+              >
+                <MenuItem value="nowhere">Nowhere</MenuItem>
+                <MenuItem value="gameAndResults">In Game and Results</MenuItem>
+                <MenuItem value="resultsOnly">In Results Only</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Divider />
+
+          <Box sx={settingRowStyles}>
             <Typography variant="subtitle2" fontWeight="bold">
               Dark Mode
             </Typography>
@@ -191,6 +223,7 @@ const settingRowStyles = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
+  gap: 2,
 };
 
 const backdropStyles = {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ResultsModal from './ResultsModal';
 
@@ -13,6 +13,7 @@ const defaultProps = {
   goalPoints: 100,
   plate: 'LPG',
   showShareButton: false,
+  displayTimes: true,
 };
 
 // Instantiated outside the render wrapper to prevent unnecessary reinstantiation
@@ -56,6 +57,22 @@ describe('ResultsModal Component', () => {
       expect(within(progressContainer).getByText('Cruising')).toBeInTheDocument();
       expect(within(progressContainer).getByText(/50 \/ 100 pts/)).toBeInTheDocument();
     });
+
+    it('renders total time when displayTimes is true', () => {
+      renderWithClient(<ResultsModal {...defaultProps} displayTimes={true} elapsedSeconds={125} />);
+
+      const progressContainer = screen.getByTestId('progress-summary');
+      expect(within(progressContainer).getByText(/Total time: 2:05/i)).toBeInTheDocument();
+    });
+
+    it('hides total time when displayTimes is false', () => {
+      renderWithClient(
+        <ResultsModal {...defaultProps} displayTimes={false} elapsedSeconds={125} />,
+      );
+
+      const progressContainer = screen.getByTestId('progress-summary');
+      expect(within(progressContainer).queryByText(/Total time:/i)).not.toBeInTheDocument();
+    });
   });
 
   describe('tier rows', () => {
@@ -77,6 +94,7 @@ describe('ResultsModal Component', () => {
       renderWithClient(
         <ResultsModal
           {...defaultProps}
+          displayTimes={true}
           elapsedSeconds={75} // 1 minute 15 seconds
           points={0}
           goalPoints={100}
@@ -89,10 +107,11 @@ describe('ResultsModal Component', () => {
       expect(screen.queryByText(/Total 1:15/i)).not.toBeInTheDocument();
     });
 
-    it('displays split durations and cumulative total times for subsequent tiers', () => {
+    it('displays split durations and cumulative total times for subsequent tiers when displayTimes is true', () => {
       renderWithClient(
         <ResultsModal
           {...defaultProps}
+          displayTimes={true}
           tierTimes={{
             Parked: 17, // Tier 1 split: 0:17
             'Good Start': 40, // Cumulative: 0:40 -> Split duration: 0:23
@@ -112,8 +131,30 @@ describe('ResultsModal Component', () => {
       expect(screen.getByText('Total 0:40')).toBeInTheDocument();
     });
 
-    it('shows "—" for future tiers', () => {
-      renderWithClient(<ResultsModal {...defaultProps} points={0} goalPoints={100} />);
+    it('hides all split and total times when displayTimes is false', () => {
+      renderWithClient(
+        <ResultsModal
+          {...defaultProps}
+          displayTimes={false}
+          tierTimes={{
+            Parked: 17,
+            'Good Start': 40,
+          }}
+          points={30}
+          goalPoints={100}
+        />,
+      );
+
+      expect(screen.queryByText('0:17')).not.toBeInTheDocument();
+      expect(screen.queryByText('0:23')).not.toBeInTheDocument();
+      expect(screen.queryByText('Total 0:40')).not.toBeInTheDocument();
+      expect(screen.queryByText('—')).not.toBeInTheDocument();
+    });
+
+    it('shows "—" for future tiers when displayTimes is true', () => {
+      renderWithClient(
+        <ResultsModal {...defaultProps} displayTimes={true} points={0} goalPoints={100} />,
+      );
       // At 0% (Parked), all tiers after Parked are future
       const dashes = screen.getAllByText('—');
       expect(dashes.length).toBeGreaterThan(0);

@@ -13,6 +13,7 @@ vi.mock('@/context/SettingsContext', () => ({
     settings: {
       playerId: 'test-player-123',
       displayName: 'Test Traveler',
+      displayTimeOption: 'resultsOnly',
       isDarkTheme: true,
     },
     updateSettings: vi.fn(),
