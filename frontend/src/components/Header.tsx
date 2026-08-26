@@ -12,7 +12,6 @@ import {
 import HowToPlayModal from '@/components/modals/HowToPlayModal';
 import SettingsModal from '@/components/modals/SettingsModal';
 import ConfirmationDialog from '@/components/modals/ConfirmationDialog';
-import Logo from '@/components/Logo';
 import { resetPracticeGame, hasPracticeProgress } from '@/utils/practiceRandomizer';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -132,8 +131,6 @@ export default function Header() {
           )}
         </Box>
 
-        <Box sx={logoStyles}>{isHomePage && <Logo />}</Box>
-
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.25, sm: 1 } }}>
           {!isLeaderboardPage && (
             <Tooltip title="Leaderboard">
@@ -210,22 +207,5 @@ const iconButtonStyles = {
     '& .MuiSvgIcon-root': {
       fontSize: '1.2rem',
     },
-  },
-};
-
-const logoStyles = {
-  position: 'absolute',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 1,
-  display: 'flex',
-  sx: {
-    transform: {
-      xs: 'translateX(-50%) scale(0.8)',
-      sm: 'translateX(-50%) scale(1)',
-    },
-  },
-  '@media (max-height: 600px), (max-width: 380px)': {
-    transform: 'translateX(-50%) scale(0.7)',
   },
 };

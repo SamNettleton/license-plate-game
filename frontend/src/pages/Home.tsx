@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Box, Typography, Stack } from '@/material-ui';
+import Logo from '@/components/Logo';
 import HowToPlayModal from '@/components/modals/HowToPlayModal';
 
 function Home() {
@@ -22,9 +23,14 @@ function Home() {
 
   return (
     <Box sx={homeContainerStyles}>
-      <Typography variant="h3" component="h1" gutterBottom sx={gameTitleTypography}>
-        License Plate Game
-      </Typography>
+      <Stack spacing={5} alignItems="center" sx={heroBrandingStyles}>
+        <Box sx={logoWrapperStyles}>
+          <Logo />
+        </Box>
+        <Typography variant="h3" component="h1" sx={gameTitleTypography}>
+          License Plate Game
+        </Typography>
+      </Stack>
 
       <Stack spacing={2} sx={{ width: '80%', maxWidth: '300px' }}>
         <Button variant="contained" size="large" fullWidth onClick={dailyPage} sx={buttonStyles}>
@@ -51,23 +57,39 @@ const homeContainerStyles = {
   px: 2,
 };
 
+const heroBrandingStyles = {
+  mb: 4,
+  '@media (max-height: 520px)': {
+    mb: 2.5,
+  },
+};
+
+const logoWrapperStyles = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  transform: 'scale(1.5)',
+  mb: 1,
+  '@media (max-height: 520px)': {
+    transform: 'scale(1)',
+    mb: 0,
+  },
+};
+
 const gameTitleTypography = {
   fontWeight: 'bold',
   textAlign: 'center',
-  mb: 4,
   color: 'primary.main',
-  fontSize: { xs: '2.5rem', sm: '3rem' },
-
+  fontSize: { xs: '2rem', sm: '2.5rem' },
+  lineHeight: 1.2,
   '@media (max-height: 520px)': {
-    fontSize: '1.8rem',
-    mb: 3,
+    fontSize: '1.5rem',
   },
 };
 
 const buttonStyles = {
   py: 1.5,
   fontSize: '1.1rem',
-
   '@media (max-height: 520px)': {
     py: 1,
     fontSize: '0.9rem',
