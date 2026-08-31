@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Keyboard from './Keyboard';
 
 describe('Keyboard Component', () => {
@@ -7,18 +7,23 @@ describe('Keyboard Component', () => {
     disabled: false,
     onChar: vi.fn(),
     onDelete: vi.fn(),
+    onClear: vi.fn(),
     onEnter: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('renders', () => {
     it('renders all keys in the QWERTY layout', () => {
       render(<Keyboard {...mockProps} />);
 
-      // Check for specific keys in each row
       expect(screen.getByText('Q')).toBeInTheDocument();
       expect(screen.getByText('A')).toBeInTheDocument();
       expect(screen.getByText('Z')).toBeInTheDocument();
@@ -42,6 +47,7 @@ describe('Keyboard Component', () => {
       expect(mockProps.onChar).not.toHaveBeenCalled();
       expect(mockProps.onEnter).not.toHaveBeenCalled();
       expect(mockProps.onDelete).not.toHaveBeenCalled();
+      expect(mockProps.onClear).not.toHaveBeenCalled();
     });
   });
 
@@ -68,14 +74,73 @@ describe('Keyboard Component', () => {
     });
   });
 
-  describe('onDelete', () => {
-    it('calls onDelete when the DELETE icon button is clicked', () => {
+  describe('onDelete & onClear', () => {
+    it('calls onDelete on a quick click', () => {
       render(<Keyboard {...mockProps} />);
 
       const deleteKey = screen.getByTestId('keyboard-delete');
       fireEvent.click(deleteKey);
 
       expect(mockProps.onDelete).toHaveBeenCalledTimes(1);
+      expect(mockProps.onClear).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onClear', () => {
+    it('calls onClear after holding down DELETE for 500ms and suppresses onDelete', () => {
+      render(<Keyboard {...mockProps} />);
+
+      const deleteKey = screen.getByTestId('keyboard-delete');
+
+      fireEvent.mouseDown(deleteKey);
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(mockProps.onClear).toHaveBeenCalledTimes(1);
+
+      fireEvent.mouseUp(deleteKey);
+      fireEvent.click(deleteKey);
+
+      expect(mockProps.onDelete).not.toHaveBeenCalled();
+    });
+
+    it('cancels onClear timer if mouse release happens before 500ms', () => {
+      render(<Keyboard {...mockProps} />);
+
+      const deleteKey = screen.getByTestId('keyboard-delete');
+
+      fireEvent.mouseDown(deleteKey);
+
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      fireEvent.mouseUp(deleteKey);
+      fireEvent.click(deleteKey);
+
+      expect(mockProps.onClear).not.toHaveBeenCalled();
+      expect(mockProps.onDelete).toHaveBeenCalledTimes(1);
+    });
+
+    it('supports touch long press for onClear', () => {
+      render(<Keyboard {...mockProps} />);
+
+      const deleteKey = screen.getByTestId('keyboard-delete');
+
+      fireEvent.touchStart(deleteKey);
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(mockProps.onClear).toHaveBeenCalledTimes(1);
+
+      fireEvent.touchEnd(deleteKey);
+      fireEvent.click(deleteKey);
+
+      expect(mockProps.onDelete).not.toHaveBeenCalled();
     });
   });
 });
