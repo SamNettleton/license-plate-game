@@ -74,7 +74,7 @@ describe('Keyboard Component', () => {
     });
   });
 
-  describe('onDelete & onClear', () => {
+  describe('onDelete', () => {
     it('calls onDelete on a quick click', () => {
       render(<Keyboard {...mockProps} />);
 

@@ -37,7 +37,7 @@ describe('PuzzleDisplay Component', () => {
     });
   });
 
-  describe('guess & ghost text', () => {
+  describe('display text', () => {
     it('displays the current guess value', () => {
       render(<PuzzleDisplay {...defaultProps} guess="LEAPFROG" />);
       expect(screen.getByText('LEAPFROG')).toBeInTheDocument();

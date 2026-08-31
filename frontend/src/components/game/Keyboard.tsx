@@ -41,7 +41,6 @@ export default function Keyboard({ disabled, onChar, onDelete, onClear, onEnter 
     if (key === 'ENTER') {
       onEnter();
     } else if (key === 'DELETE') {
-      // If it was a long press, onClear was already executed, so skip single delete
       if (isLongPressRef.current) {
         isLongPressRef.current = false;
         return;

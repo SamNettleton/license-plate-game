@@ -117,7 +117,6 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
     setIsSubmitting(true);
     const lowercaseGuess = state.guess.toLowerCase();
 
-    // Preserve guess for recall before submission alters state
     dispatch({ type: 'SAVE_LAST_SUBMITTED_GUESS', payload: state.guess });
 
     if (state.solutions.includes(lowercaseGuess)) {
