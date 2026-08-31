@@ -46,6 +46,47 @@ describe('gameReducer', () => {
       });
     });
 
+    describe('SAVE_LAST_SUBMITTED_GUESS', () => {
+      it('stores the payload into lastSubmittedGuess without altering current guess', () => {
+        const state: GameState = {
+          ...initialState,
+          guess: 'leapfrog',
+          lastSubmittedGuess: '',
+        };
+        const action = { type: 'SAVE_LAST_SUBMITTED_GUESS' as const, payload: 'leapfrog' };
+        const newState = gameReducer(state, action);
+
+        expect(newState.lastSubmittedGuess).toBe('leapfrog');
+        expect(newState.guess).toBe('leapfrog');
+      });
+    });
+
+    describe('RECALL_LAST_GUESS', () => {
+      it('populates guess with lastSubmittedGuess', () => {
+        const state: GameState = {
+          ...initialState,
+          guess: '',
+          lastSubmittedGuess: 'leapfrog',
+        };
+        const action = { type: 'RECALL_LAST_GUESS' as const };
+        const newState = gameReducer(state, action);
+
+        expect(newState.guess).toBe('leapfrog');
+      });
+
+      it('overwrites an active guess with lastSubmittedGuess', () => {
+        const state: GameState = {
+          ...initialState,
+          guess: 'partial',
+          lastSubmittedGuess: 'leapfrog',
+        };
+        const action = { type: 'RECALL_LAST_GUESS' as const };
+        const newState = gameReducer(state, action);
+
+        expect(newState.guess).toBe('leapfrog');
+      });
+    });
+
     describe('ADD_SOLUTION', () => {
       it('adds word, updates points, and clears the guess', () => {
         const state: GameState = {
@@ -205,6 +246,7 @@ describe('gameReducer', () => {
       it('clears all fields back to initialState', () => {
         const state: GameState = {
           guess: 'leapfrog',
+          lastSubmittedGuess: 'leapfrog',
           solutions: ['limping'],
           points: 10,
           lastFeedback: { message: 'Success!', type: 'success' },

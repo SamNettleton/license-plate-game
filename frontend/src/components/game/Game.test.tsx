@@ -196,6 +196,89 @@ describe('Game Component', () => {
     });
   });
 
+  describe('Guess Recall', () => {
+    it('recalls the last submitted guess when pressing Enter with an empty guess (physical keyboard)', async () => {
+      vi.mocked(wordService.checkWordValidity).mockResolvedValue({
+        is_valid: false,
+        points: 0,
+        message: 'Not in word list',
+      });
+
+      const user = userEvent.setup();
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+        </QueryClientProvider>,
+      );
+
+      await user.keyboard('LEAPFROG{Enter}');
+
+      await waitFor(() => {
+        expect(wordService.checkWordValidity).toHaveBeenCalledTimes(1);
+      });
+
+      // Pressing Enter when guess is empty should recall LEAPFROG into the input field
+      await user.keyboard('{Enter}');
+
+      expect(screen.getByText('LEAPFROG')).toBeInTheDocument();
+    });
+
+    it('recalls the last submitted guess when clicking ENTER on the virtual keyboard with an empty guess', async () => {
+      vi.mocked(wordService.checkWordValidity).mockResolvedValue({
+        is_valid: false,
+        points: 0,
+        message: 'Not in word list',
+      });
+
+      const user = userEvent.setup();
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+        </QueryClientProvider>,
+      );
+
+      await user.keyboard('LEAPFROG{Enter}');
+
+      await waitFor(() => {
+        expect(wordService.checkWordValidity).toHaveBeenCalledTimes(1);
+      });
+
+      const enterKey = screen.getByText('ENTER');
+      await user.click(enterKey);
+
+      expect(screen.getByText('LEAPFROG')).toBeInTheDocument();
+    });
+
+    it('recalls last submitted guess when clicking the ghost text input wrapper area', async () => {
+      vi.mocked(wordService.checkWordValidity).mockResolvedValue({
+        is_valid: false,
+        points: 0,
+        message: 'Not in word list',
+      });
+
+      const user = userEvent.setup();
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+        </QueryClientProvider>,
+      );
+
+      await user.keyboard('LEAPFROG{Enter}');
+
+      await waitFor(() => {
+        expect(wordService.checkWordValidity).toHaveBeenCalledTimes(1);
+      });
+
+      const ghostText = screen.getByText('LEAPFROG');
+      await user.click(ghostText);
+
+      expect(screen.getByText('LEAPFROG')).toBeInTheDocument();
+    });
+  });
+
   describe('Error Handling', () => {
     it('displays an error message and logs to faro when the API call fails', async () => {
       const user = userEvent.setup();

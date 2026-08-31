@@ -1,10 +1,12 @@
 import { Box, Button } from '@components';
 import { DeleteIcon } from '@icons';
+import * as React from 'react';
 
 type KeyboardProps = {
   disabled?: boolean;
   onChar: (char: string) => void;
   onDelete: () => void;
+  onClear: () => void;
   onEnter: () => void;
 };
 
@@ -14,12 +16,39 @@ const ROWS = [
   ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'DELETE'],
 ];
 
-export default function Keyboard({ disabled, onChar, onDelete, onEnter }: KeyboardProps) {
+export default function Keyboard({ disabled, onChar, onDelete, onClear, onEnter }: KeyboardProps) {
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLongPressRef = React.useRef(false);
+
+  const startHold = () => {
+    if (disabled || !onClear) return;
+    isLongPressRef.current = false;
+    timerRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      onClear();
+    }, 500);
+  };
+
+  const endHold = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
   const handleClick = (key: string) => {
     if (disabled) return;
-    if (key === 'ENTER') onEnter();
-    else if (key === 'DELETE') onDelete();
-    else onChar(key);
+    if (key === 'ENTER') {
+      onEnter();
+    } else if (key === 'DELETE') {
+      if (isLongPressRef.current) {
+        isLongPressRef.current = false;
+        return;
+      }
+      onDelete();
+    } else {
+      onChar(key);
+    }
   };
 
   return (
@@ -28,16 +57,23 @@ export default function Keyboard({ disabled, onChar, onDelete, onEnter }: Keyboa
         <Box key={rowIndex} sx={keyRowStyles(rowIndex)}>
           {row.map((key) => {
             const isSpecial = key === 'ENTER' || key === 'DELETE';
+            const isDelete = key === 'DELETE';
+
             return (
               <Button
                 key={key}
                 variant="contained"
                 onClick={() => handleClick(key)}
-                aria-label={key === 'DELETE' ? 'delete' : undefined}
-                data-testid={key === 'DELETE' ? 'keyboard-delete' : undefined}
+                onMouseDown={isDelete ? startHold : undefined}
+                onMouseUp={isDelete ? endHold : undefined}
+                onMouseLeave={isDelete ? endHold : undefined}
+                onTouchStart={isDelete ? startHold : undefined}
+                onTouchEnd={isDelete ? endHold : undefined}
+                aria-label={isDelete ? 'delete' : undefined}
+                data-testid={isDelete ? 'keyboard-delete' : undefined}
                 sx={keyStyles(isSpecial)}
               >
-                {key === 'DELETE' ? <DeleteIcon fontSize="small" /> : key}
+                {isDelete ? <DeleteIcon fontSize="small" /> : key}
               </Button>
             );
           })}
@@ -55,7 +91,6 @@ const keyboardContainerStyles = {
   width: '100%',
   mt: 3,
 
-  // Short Screen Optimization
   '@media (max-height: 600px)': {
     mt: 0,
     gap: 0.75,
@@ -75,7 +110,6 @@ const keyStyles = (isSpecial: boolean) => ({
   minWidth: 0,
   height: { xs: '45px', sm: '58px' },
 
-  // Short Screen Optimization
   '@media (max-height: 600px)': {
     height: '38px',
     fontSize: isSpecial ? '0.5rem' : '1rem',

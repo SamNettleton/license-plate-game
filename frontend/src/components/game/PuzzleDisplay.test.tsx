@@ -7,11 +7,13 @@ describe('PuzzleDisplay Component', () => {
   const defaultProps = {
     plate: 'LPG',
     guess: '',
+    lastSubmittedGuess: '',
     isSubmitting: false,
     isModalOpen: false,
     feedback: null as GameFeedback | null,
     onGuessChange: vi.fn(),
     onGuessSubmit: vi.fn(),
+    onRecallLastGuess: vi.fn(),
   };
 
   beforeEach(() => {
@@ -26,7 +28,6 @@ describe('PuzzleDisplay Component', () => {
 
     it('renders the virtual keyboard', () => {
       render(<PuzzleDisplay {...defaultProps} />);
-      // Check for a few keys to ensure Keyboard is present
       expect(screen.getByText('Q')).toBeInTheDocument();
       expect(screen.getByText('O')).toBeInTheDocument();
       expect(screen.getByText('S')).toBeInTheDocument();
@@ -36,10 +37,24 @@ describe('PuzzleDisplay Component', () => {
     });
   });
 
-  describe('guess', () => {
+  describe('display text', () => {
     it('displays the current guess value', () => {
       render(<PuzzleDisplay {...defaultProps} guess="LEAPFROG" />);
       expect(screen.getByText('LEAPFROG')).toBeInTheDocument();
+    });
+
+    it('renders ghost text for lastSubmittedGuess when guess is empty', () => {
+      render(<PuzzleDisplay {...defaultProps} guess="" lastSubmittedGuess="LEAPFROG" />);
+      expect(screen.getByText('LEAPFROG')).toBeInTheDocument();
+    });
+
+    it('calls onRecallLastGuess when clicking the ghost text input area', () => {
+      render(<PuzzleDisplay {...defaultProps} guess="" lastSubmittedGuess="LEAPFROG" />);
+
+      const ghostText = screen.getByText('LEAPFROG');
+      fireEvent.click(ghostText);
+
+      expect(defaultProps.onRecallLastGuess).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -55,11 +70,9 @@ describe('PuzzleDisplay Component', () => {
       vi.useFakeTimers();
       render(<PuzzleDisplay {...defaultProps} isSubmitting={true} />);
 
-      // Spinner should not be immediately visible
       const spinner = screen.queryByRole('progressbar');
       expect(spinner).not.toBeInTheDocument();
 
-      // Fast-forward time by 300ms to trigger the spinner
       act(() => {
         vi.advanceTimersByTime(300);
       });
@@ -76,7 +89,6 @@ describe('PuzzleDisplay Component', () => {
       const successFeedback: GameFeedback = { message: 'Valid word!', type: 'success' };
       render(<PuzzleDisplay {...defaultProps} feedback={successFeedback} />);
 
-      // findByText is useful here to handle the internal Fade animation of FeedbackDisplay
       expect(await screen.findByText('Valid word!')).toBeInTheDocument();
     });
 
@@ -106,6 +118,21 @@ describe('PuzzleDisplay Component', () => {
 
         expect(defaultProps.onGuessChange).toHaveBeenCalledWith('WOR');
       });
+
+      it('calls onGuessChange with empty string when DELETE onClear fires', () => {
+        vi.useFakeTimers();
+        render(<PuzzleDisplay {...defaultProps} guess="WORD" />);
+
+        const deleteKey = screen.getByTestId('keyboard-delete');
+        fireEvent.mouseDown(deleteKey);
+
+        act(() => {
+          vi.advanceTimersByTime(500);
+        });
+
+        expect(defaultProps.onGuessChange).toHaveBeenCalledWith('');
+        vi.useRealTimers();
+      });
     });
 
     describe('physical keyboard', () => {
@@ -123,34 +150,57 @@ describe('PuzzleDisplay Component', () => {
     });
   });
 
-  describe('onGuessSubmit', () => {
+  describe('onGuessSubmit and recall handling', () => {
     describe('virtual keyboard', () => {
-      it('calls onGuessSubmit when ENTER key is clicked', () => {
-        render(<PuzzleDisplay {...defaultProps} />);
+      it('calls onGuessSubmit when ENTER is clicked with non-empty guess', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="LEAPFROG" />);
         const enterKey = screen.getByText('ENTER');
 
         fireEvent.click(enterKey);
-        expect(defaultProps.onGuessSubmit).toHaveBeenCalled();
+        expect(defaultProps.onGuessSubmit).toHaveBeenCalledTimes(1);
+        expect(defaultProps.onRecallLastGuess).not.toHaveBeenCalled();
+      });
+
+      it('calls onRecallLastGuess when ENTER is clicked with empty guess and existing lastSubmittedGuess', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="" lastSubmittedGuess="LEAPFROG" />);
+        const enterKey = screen.getByText('ENTER');
+
+        fireEvent.click(enterKey);
+        expect(defaultProps.onRecallLastGuess).toHaveBeenCalledTimes(1);
+        expect(defaultProps.onGuessSubmit).not.toHaveBeenCalled();
       });
     });
 
     describe('physical keyboard', () => {
-      it('calls onGuessSubmit when Enter is pressed and NO button is focused', () => {
-        render(<PuzzleDisplay {...defaultProps} />);
+      it('calls onGuessSubmit when Enter is pressed with active guess', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="LEAPFROG" />);
 
-        // Ensure body is focused
         document.body.focus();
 
         const event = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
         vi.spyOn(event, 'preventDefault');
         window.dispatchEvent(event);
 
-        expect(defaultProps.onGuessSubmit).toHaveBeenCalled();
+        expect(defaultProps.onGuessSubmit).toHaveBeenCalledTimes(1);
         expect(event.preventDefault).toHaveBeenCalled();
       });
 
-      it('does NOT call onGuessSubmit or preventDefault when a button IS focused', () => {
-        render(<PuzzleDisplay {...defaultProps} />);
+      it('calls onRecallLastGuess when Enter is pressed with empty guess', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="" lastSubmittedGuess="LEAPFROG" />);
+
+        document.body.focus();
+
+        const event = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
+        vi.spyOn(event, 'preventDefault');
+        window.dispatchEvent(event);
+
+        expect(defaultProps.onRecallLastGuess).toHaveBeenCalledTimes(1);
+        expect(defaultProps.onGuessSubmit).not.toHaveBeenCalled();
+        expect(event.preventDefault).toHaveBeenCalled();
+      });
+
+      it('does NOT call submission or recall when a button IS focused', () => {
+        render(<PuzzleDisplay {...defaultProps} guess="LEAPFROG" />);
 
         const button = document.createElement('button');
         document.body.appendChild(button);
@@ -160,8 +210,8 @@ describe('PuzzleDisplay Component', () => {
         vi.spyOn(event, 'preventDefault');
         window.dispatchEvent(event);
 
-        // The game should NOT intercept this Enter key
         expect(defaultProps.onGuessSubmit).not.toHaveBeenCalled();
+        expect(defaultProps.onRecallLastGuess).not.toHaveBeenCalled();
         expect(event.preventDefault).not.toHaveBeenCalled();
 
         document.body.removeChild(button);
@@ -173,7 +223,6 @@ describe('PuzzleDisplay Component', () => {
     it('blurs a focused button when a letter is typed', () => {
       render(<PuzzleDisplay {...defaultProps} />);
 
-      // Create a dummy button and focus it
       const button = document.createElement('button');
       document.body.appendChild(button);
       button.focus();
@@ -181,7 +230,6 @@ describe('PuzzleDisplay Component', () => {
 
       fireEvent.keyDown(window, { key: 'a' });
 
-      // Focus should have been dropped (back to document.body)
       expect(document.activeElement).not.toBe(button);
       document.body.removeChild(button);
     });

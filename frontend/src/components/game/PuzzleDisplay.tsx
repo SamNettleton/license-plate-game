@@ -7,21 +7,25 @@ import { GameFeedback } from '@/types/game';
 type Props = {
   plate: string;
   guess: string;
+  lastSubmittedGuess?: string;
   isSubmitting: boolean;
   isModalOpen: boolean;
   feedback: GameFeedback | null;
   onGuessChange: (val: string) => void;
   onGuessSubmit: () => void;
+  onRecallLastGuess?: () => void;
 };
 
 export default function PuzzleDisplay({
   plate,
   guess,
+  lastSubmittedGuess,
   isSubmitting,
   isModalOpen,
   feedback,
   onGuessChange,
   onGuessSubmit,
+  onRecallLastGuess,
 }: Props) {
   const [showSpinner, setShowSpinner] = React.useState(false);
 
@@ -34,6 +38,14 @@ export default function PuzzleDisplay({
     }
     return () => clearTimeout(timer);
   }, [isSubmitting]);
+
+  const canRecall = !guess && Boolean(lastSubmittedGuess);
+
+  const handleInputClick = () => {
+    if (canRecall && onRecallLastGuess) {
+      onRecallLastGuess();
+    }
+  };
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,10 +62,6 @@ export default function PuzzleDisplay({
       const isBackspace = e.key === 'Backspace';
       const isEnter = e.key === 'Enter';
 
-      // Unfocus any focused element (like TextField) when typing outside,
-      // to prevent double input issues.
-      // Only do this for relevant keys to avoid disrupting other interactions
-      // (e.g. arrow keys, tab).
       if (isLetter || isBackspace) {
         if (
           document.activeElement instanceof HTMLElement &&
@@ -67,7 +75,11 @@ export default function PuzzleDisplay({
 
         if (!isFocusedOnButton) {
           e.preventDefault();
-          onGuessSubmit();
+          if (!guess && lastSubmittedGuess && onRecallLastGuess) {
+            onRecallLastGuess();
+          } else {
+            onGuessSubmit();
+          }
         }
       } else if (isBackspace) {
         onGuessChange(guess.slice(0, -1));
@@ -88,7 +100,11 @@ export default function PuzzleDisplay({
   };
 
   const handleEnter = () => {
-    onGuessSubmit();
+    if (!guess && lastSubmittedGuess && onRecallLastGuess) {
+      onRecallLastGuess();
+    } else {
+      onGuessSubmit();
+    }
   };
 
   return (
@@ -100,9 +116,21 @@ export default function PuzzleDisplay({
       <Box sx={bottomSpacerStyles} />
 
       <Box sx={dockStyles}>
-        <Box sx={inputWrapperStyles}>
+        <Box
+          sx={{
+            ...inputWrapperStyles,
+            cursor: canRecall ? 'pointer' : 'default',
+          }}
+          onClick={handleInputClick}
+        >
           <Typography variant="h4" sx={guessTypographyStyles}>
-            {guess}
+            {guess ? (
+              guess
+            ) : canRecall ? (
+              <Box component="span" sx={{ opacity: 0.35, userSelect: 'none' }}>
+                {lastSubmittedGuess?.toUpperCase()}
+              </Box>
+            ) : null}
             <Box component="span" sx={cursorStyles} />
           </Typography>
 
@@ -113,6 +141,7 @@ export default function PuzzleDisplay({
           disabled={isSubmitting}
           onChar={handleChar}
           onDelete={handleDelete}
+          onClear={() => onGuessChange('')}
           onEnter={handleEnter}
         />
       </Box>
@@ -130,7 +159,6 @@ const containerStyles = {
   pt: { xs: '2rem', md: '4rem' },
   gap: { xs: 0, md: 5 },
 
-  // Short Screen Optimization
   '@media (max-height: 600px)': {
     pt: '0.5rem',
     gap: '0.5rem',
@@ -161,7 +189,6 @@ const cursorStyles = {
     '50%': { opacity: 0 },
   },
 
-  // Short Screen Optimization
   '@media (max-height: 600px)': {
     height: '1.5rem',
     width: '1.5px',
@@ -172,11 +199,9 @@ const plateStyles = {
   position: 'relative',
   width: 'fit-content',
   mx: 'auto',
-  // Default sizes
   fontSize: { xs: '3.5rem', sm: '5rem' },
   padding: { xs: '0.75rem 1.25rem', sm: '1.5rem 2.5rem 0.75rem 2.5rem' },
 
-  // Short Screen Optimization
   '@media (max-height: 600px)': {
     fontSize: '2.5rem',
     padding: '0.7rem 1.25rem 0.25rem 1.25rem',
@@ -205,7 +230,6 @@ const plateStyles = {
     inset 0px 0px 0px 1px rgba(255, 255, 255, 0.1)
   `,
 
-  // "Inner Stripe" overlay
   '&::after': {
     content: '""',
     position: 'absolute',
@@ -273,7 +297,6 @@ const guessTypographyStyles = {
   alignItems: 'bottom',
   fontSize: '2rem',
 
-  // Short Screen Optimization
   '@media (max-height: 600px)': {
     fontSize: '1.5rem',
     minHeight: '2rem',

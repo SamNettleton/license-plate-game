@@ -3,6 +3,7 @@ import { GameFeedback } from '@/types/game';
 
 export type GameState = {
   guess: string;
+  lastSubmittedGuess: string;
   solutions: string[];
   points: number;
   lastFeedback: GameFeedback | null;
@@ -13,6 +14,8 @@ export type GameState = {
 
 export type GameAction =
   | { type: 'SET_GUESS'; payload: string }
+  | { type: 'SAVE_LAST_SUBMITTED_GUESS'; payload: string }
+  | { type: 'RECALL_LAST_GUESS' }
   | {
       type: 'ADD_SOLUTION';
       guess: string;
@@ -28,6 +31,7 @@ export type GameAction =
 
 export const initialState: GameState = {
   guess: '',
+  lastSubmittedGuess: '',
   solutions: [],
   points: 0,
   lastFeedback: null,
@@ -73,6 +77,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SET_GUESS':
       return { ...state, guess: action.payload };
+
+    case 'SAVE_LAST_SUBMITTED_GUESS':
+      return { ...state, lastSubmittedGuess: action.payload };
+
+    case 'RECALL_LAST_GUESS':
+      return { ...state, guess: state.lastSubmittedGuess };
 
     case 'ADD_SOLUTION': {
       const updatedSolutions = [...state.solutions, action.guess].sort((a, b) =>

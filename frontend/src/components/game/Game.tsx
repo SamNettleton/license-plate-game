@@ -113,9 +113,12 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
   }, [state.solutions, state.points, state.tierTimes, state.elapsedSeconds, mode]);
 
   const checkGuess = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || !state.guess.trim()) return;
     setIsSubmitting(true);
     const lowercaseGuess = state.guess.toLowerCase();
+
+    dispatch({ type: 'SAVE_LAST_SUBMITTED_GUESS', payload: state.guess });
+
     if (state.solutions.includes(lowercaseGuess)) {
       dispatch({ type: 'SET_FEEDBACK_MESSAGE', message: 'Already found!', feedbackType: 'info' });
       setIsSubmitting(false);
@@ -211,11 +214,13 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
           <PuzzleDisplay
             plate={plate}
             guess={state.guess}
+            lastSubmittedGuess={state.lastSubmittedGuess}
             isSubmitting={isSubmitting}
             isModalOpen={isModalOpen}
             feedback={showAlert ? state.lastFeedback : null}
             onGuessChange={(val) => dispatch({ type: 'SET_GUESS', payload: val })}
             onGuessSubmit={checkGuess}
+            onRecallLastGuess={() => dispatch({ type: 'RECALL_LAST_GUESS' })}
           />
         </Box>
       </Grid>
