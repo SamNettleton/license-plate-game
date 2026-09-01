@@ -17,20 +17,26 @@ export const Calendar: React.FC<CalendarProps> = ({
   maxDate,
   onSelectDate,
 }) => {
-  const monthLabel = selectedDate.toLocaleDateString(undefined, {
+  const [viewDate, setViewDate] = React.useState<Date>(selectedDate);
+
+  React.useEffect(() => {
+    setViewDate(selectedDate);
+  }, [selectedDate]);
+
+  const monthLabel = viewDate.toLocaleDateString(undefined, {
     month: 'long',
     year: 'numeric',
   });
 
   const todayKey = React.useMemo(() => formatDateKey(new Date()), []);
 
-  const isPrevMonthDisabled = startOfMonth(selectedDate) <= startOfMonth(minDate);
-  const isNextMonthDisabled = startOfMonth(selectedDate) >= startOfMonth(maxDate);
+  const isPrevMonthDisabled = startOfMonth(viewDate) <= startOfMonth(minDate);
+  const isNextMonthDisabled = startOfMonth(viewDate) >= startOfMonth(maxDate);
 
   const calendarDays = React.useMemo(() => {
-    const monthStart = startOfMonth(selectedDate);
+    const monthStart = startOfMonth(viewDate);
     const firstWeekday = (monthStart.getDay() + 6) % 7;
-    const totalCells = Math.ceil((daysInMonth(selectedDate) + firstWeekday) / 7) * 7;
+    const totalCells = Math.ceil((daysInMonth(viewDate) + firstWeekday) / 7) * 7;
     const cells: Array<{
       date: Date;
       inMonth: boolean;
@@ -42,7 +48,7 @@ export const Calendar: React.FC<CalendarProps> = ({
     for (let index = 0; index < totalCells; index += 1) {
       const currentDate = addDays(monthStart, index - firstWeekday);
       const formattedKey = formatDateKey(currentDate);
-      const inMonth = currentDate.getMonth() === selectedDate.getMonth();
+      const inMonth = currentDate.getMonth() === viewDate.getMonth();
       const isSelected = formattedKey === formatDateKey(selectedDate);
       const isToday = formattedKey === todayKey;
       const isDisabled = currentDate < minDate || currentDate > maxDate;
@@ -51,17 +57,10 @@ export const Calendar: React.FC<CalendarProps> = ({
     }
 
     return cells;
-  }, [selectedDate, minDate, maxDate, todayKey]);
+  }, [viewDate, selectedDate, minDate, maxDate, todayKey]);
 
   const moveByMonth = (amount: number) => {
-    const targetMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + amount, 1);
-    if (targetMonth < minDate) {
-      onSelectDate(minDate);
-    } else if (targetMonth > maxDate) {
-      onSelectDate(maxDate);
-    } else {
-      onSelectDate(targetMonth);
-    }
+    setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
   };
 
   return (
@@ -113,7 +112,6 @@ export const Calendar: React.FC<CalendarProps> = ({
   );
 };
 
-// Extracted Styles
 const containerStyles: SxProps<Theme> = {
   width: '100%',
 };

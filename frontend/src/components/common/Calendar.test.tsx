@@ -124,7 +124,7 @@ describe('Calendar', () => {
       expect(screen.getByRole('button', { name: 'next month' })).toBeDisabled();
     });
 
-    it('navigates to the adjacent month when buttons are clicked', () => {
+    it('updates viewed month when navigating backward without triggering onSelectDate', () => {
       const wideMin = new Date(2026, 3, 1); // April 1
       const wideMax = new Date(2026, 5, 30); // June 30
 
@@ -142,37 +142,27 @@ describe('Calendar', () => {
 
       fireEvent.click(prevButton);
 
-      expect(mockOnSelectDate).toHaveBeenCalledWith(new Date(2026, 3, 1));
+      expect(screen.getByText('April 2026')).toBeInTheDocument();
+      expect(mockOnSelectDate).not.toHaveBeenCalled();
     });
 
-    it('clamps target date to minDate when navigating backward beyond range', () => {
-      render(
-        <Calendar
-          selectedDate={new Date(2026, 5, 10)} // June 10
-          minDate={new Date(2026, 4, 25)} // May 25
-          maxDate={new Date(2026, 5, 30)}
-          onSelectDate={mockOnSelectDate}
-        />,
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: 'previous month' }));
-
-      expect(mockOnSelectDate).toHaveBeenCalledWith(new Date(2026, 4, 25));
-    });
-
-    it('navigates to the first day of next month when within range', () => {
+    it('updates viewed month when navigating forward without triggering onSelectDate', () => {
       render(
         <Calendar
           selectedDate={new Date(2026, 3, 10)} // April 10
           minDate={new Date(2026, 3, 1)}
-          maxDate={new Date(2026, 4, 5)} // May 5
+          maxDate={new Date(2026, 5, 5)} // June 5
           onSelectDate={mockOnSelectDate}
         />,
       );
 
-      fireEvent.click(screen.getByRole('button', { name: 'next month' }));
+      const nextButton = screen.getByRole('button', { name: 'next month' });
+      expect(nextButton).not.toBeDisabled();
 
-      expect(mockOnSelectDate).toHaveBeenCalledWith(new Date(2026, 4, 1));
+      fireEvent.click(nextButton);
+
+      expect(screen.getByText('May 2026')).toBeInTheDocument();
+      expect(mockOnSelectDate).not.toHaveBeenCalled();
     });
   });
 
