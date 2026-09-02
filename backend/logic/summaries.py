@@ -23,14 +23,17 @@ async def build_daily_summaries(db: AsyncSession, target_date: date | None = Non
         ON CONFLICT (user_id, date) DO UPDATE SET
             words_found = (
                 SELECT array_agg(DISTINCT w)
-                FROM unnest(daily_user_summaries.words_found || EXCLUDED.words_found) AS w
+                FROM unnest(
+                    COALESCE(daily_user_summaries.words_found, ARRAY[]::varchar[]) || 
+                    COALESCE(EXCLUDED.words_found, ARRAY[]::varchar[])
+                ) AS w
             ),
             points_earned = daily_user_summaries.points_earned + COALESCE((
                 SELECT SUM(pt.points)
                 FROM point_transactions pt
                 WHERE pt.user_id = EXCLUDED.user_id 
                   AND pt.puzzle_date = EXCLUDED.date
-                  AND NOT (pt.word = ANY(daily_user_summaries.words_found))
+                  AND NOT (pt.word = ANY(COALESCE(daily_user_summaries.words_found, ARRAY[]::varchar[])))
             ), 0);
     """)
     
