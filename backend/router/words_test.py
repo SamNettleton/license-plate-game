@@ -46,10 +46,8 @@ def test_check_word_valid(monkeypatch, sync_client):
     assert "Nice one!" in data["message"]
     assert data["points"] == 13
 
+
 def test_check_word_invalid_sequence(sync_client):
-    # We do not need to mock dictionary for this because it fails the first
-    # logic check `verify_word_against_sequence`
-    
     payload = {
         "word": "goalpost",
         "sequence": "LPG"
@@ -62,6 +60,7 @@ def test_check_word_invalid_sequence(sync_client):
     assert data["is_valid"] is False
     assert "Word must contain LPG in order." in data["message"]
     
+
 def test_check_word_invalid_dictionary_word(monkeypatch, sync_client):
     import services.dictionary as dictionary
     
@@ -80,21 +79,21 @@ def test_check_word_invalid_dictionary_word(monkeypatch, sync_client):
     assert data["is_valid"] is False
     assert "not in our dictionary" in data["message"]
 
+
 def test_check_word_validation_error(sync_client):
-    # FastAPI Pydantic schema validation failure (missing sequence)
     payload = {
         "word": "leapfrog",
     }
     
     response = sync_client.post("/api/words/check", json=payload)
-    assert response.status_code == 422 # Unprocessable Entity
+    assert response.status_code == 422
     
     data = response.json()
     assert "detail" in data
 
 
 @pytest.mark.asyncio
-async def test_word_check_daily_creates_point_transaction(client, db, monkeypatch):
+async def test_word_check_daily_updates_daily_user_summary(client, db, monkeypatch):
     import services.dictionary as dictionary
 
     async def mock_validate_word(session, word):
@@ -127,22 +126,81 @@ async def test_word_check_daily_creates_point_transaction(client, db, monkeypatc
 
     result = await db.execute(
         text(
-            'SELECT user_id, points, word, puzzle_date '
-            'FROM point_transactions WHERE user_id = :user_id'
+            'SELECT user_id, date, points_earned, words_found '
+            'FROM daily_user_summaries WHERE user_id = :user_id AND date = :puzzle_date'
         ),
-        {'user_id': user_id},
+        {
+            'user_id': user_id, 
+            'puzzle_date': date.fromisoformat(puzzle_date)
+        },
     )
     row = result.fetchone()
 
     assert row is not None
     assert row.user_id == user_id
-    assert row.points == 13
-    assert row.word == 'leapfrog'
-    assert row.puzzle_date == date.fromisoformat(puzzle_date)
+    assert row.date == date.fromisoformat(puzzle_date)
+    assert row.points_earned == 13
+    assert row.words_found == ['leapfrog']
 
 
 @pytest.mark.asyncio
-async def test_word_check_daily_does_not_create_transaction_without_user_or_date(client, db, monkeypatch):
+async def test_word_check_daily_rejects_already_found_word(client, db, monkeypatch):
+    import services.dictionary as dictionary
+
+    async def mock_validate_word(session, word):
+        return True
+
+    monkeypatch.setattr(dictionary, 'validate_word', mock_validate_word)
+
+    user_id = 'user-1234'
+    puzzle_date = '2026-08-11'
+
+    await db.execute(
+        text("INSERT INTO users (id, display_name) VALUES (:id, :name)"),
+        {"id": user_id, "name": "Test User"}
+    )
+    await db.commit()
+
+    payload = {
+        'word': 'leapfrog',
+        'sequence': 'LPG',
+        'user_id': user_id,
+        'puzzle_date': puzzle_date,
+    }
+
+    # First attempt: succeeds
+    first_res = await client.post('/api/words/check', json=payload)
+    assert first_res.status_code == 200
+    assert first_res.json()['is_valid'] is True
+
+    # Second attempt (e.g. synced device or duplicate guess): fails duplicate check
+    second_res = await client.post('/api/words/check', json=payload)
+    assert second_res.status_code == 200
+    
+    data = second_res.json()
+    assert data['is_valid'] is False
+    assert "already found" in data['message'].lower()
+    assert data['points'] == 0
+
+    # Verify score did not double-increment in database
+    result = await db.execute(
+        text(
+            'SELECT user_id, date, points_earned, words_found '
+            'FROM daily_user_summaries WHERE user_id = :user_id AND date = :puzzle_date'
+        ),
+        {
+            'user_id': user_id, 
+            'puzzle_date': date.fromisoformat(puzzle_date)
+        },
+    )
+    row = result.fetchone()
+
+    assert row.points_earned == 13
+    assert row.words_found == ['leapfrog']
+
+
+@pytest.mark.asyncio
+async def test_word_check_daily_does_not_create_summary_without_user_or_date(client, db, monkeypatch):
     import services.dictionary as dictionary
 
     async def mock_validate_word(session, word):
@@ -161,6 +219,6 @@ async def test_word_check_daily_does_not_create_transaction_without_user_or_date
     assert response.status_code == 200
     assert response.json()['is_valid'] is True
 
-    result = await db.execute(text('SELECT COUNT(*) FROM point_transactions'))
+    result = await db.execute(text('SELECT COUNT(*) FROM daily_user_summaries'))
     count = result.scalar_one()
     assert count == 0

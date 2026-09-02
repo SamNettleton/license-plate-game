@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from db.models import DailyUserSummary, PointTransaction
+from db.models import DailyUserSummary
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -28,113 +28,67 @@ async def get_daily_stats(
                 status_code=400, detail="Date must be in YYYY-MM-DD format."
             ) from exc
 
-    is_live_window = parsed_date >= (today - timedelta(days=1))
-
-    if is_live_window:
-        word_len = func.length(PointTransaction.word)
-
-        # Per-user totals CTE for computing averages across active users
-        user_totals_cte = (
-            select(
-                PointTransaction.user_id,
-                func.sum(PointTransaction.points).label("user_total_points"),
-                func.count(PointTransaction.id).label("user_words_count"),
-            )
-            .where(PointTransaction.puzzle_date == parsed_date)
-            .group_by(PointTransaction.user_id)
-            .cte("user_totals")
+    # Unnest words for global word length metrics across all users for the given date
+    words_cte = (
+        select(
+            DailyUserSummary.user_id,
+            DailyUserSummary.points_earned,
+            func.unnest(DailyUserSummary.words_found).label("word"),
         )
+        .where(DailyUserSummary.date == parsed_date)
+        .cte("daily_words")
+    )
 
-        global_query = select(
-            func.coalesce(func.avg(word_len), 0).label("avg_word_length"),
-            func.coalesce(func.min(word_len), 0).label("min_word_length"),
-            func.coalesce(func.max(word_len), 0).label("max_word_length"),
+    cte_word_len = func.length(words_cte.c.word)
+
+    # Subqueries for average points and word counts per player
+    global_user_avg_points = (
+        select(func.coalesce(func.avg(DailyUserSummary.points_earned), 0))
+        .where(DailyUserSummary.date == parsed_date)
+        .scalar_subquery()
+    )
+
+    global_user_avg_words = (
+        select(
             func.coalesce(
-                select(func.avg(user_totals_cte.c.user_total_points)).scalar_subquery(),
-                0,
-            ).label("total_points"),
-            func.coalesce(
-                select(func.avg(user_totals_cte.c.user_words_count)).scalar_subquery(),
-                0,
-            ).label("words_found_count"),
-        ).where(PointTransaction.puzzle_date == parsed_date)
-
-        global_stats_row = (await db.execute(global_query)).mappings().one_or_none()
-
-        user_specific_row = None
-        if user_id:
-            user_query = select(
-                func.coalesce(func.avg(word_len), 0).label("avg_word_length"),
-                func.coalesce(func.min(word_len), 0).label("min_word_length"),
-                func.coalesce(func.max(word_len), 0).label("max_word_length"),
-                func.coalesce(func.sum(PointTransaction.points), 0).label("total_points"),
-                func.count(PointTransaction.id).label("words_found_count"),
-            ).where(
-                PointTransaction.puzzle_date == parsed_date,
-                PointTransaction.user_id == user_id,
+                func.avg(func.cardinality(DailyUserSummary.words_found)), 0
             )
-            user_specific_row = (await db.execute(user_query)).mappings().one_or_none()
-
-    else:
-        # Global stats query for historical records
-        words_cte = (
-            select(
-                DailyUserSummary.user_id,
-                DailyUserSummary.points_earned,
-                func.unnest(DailyUserSummary.words_found).label("word"),
-            )
-            .where(DailyUserSummary.date == parsed_date)
-            .cte("historical_words")
         )
+        .where(DailyUserSummary.date == parsed_date)
+        .scalar_subquery()
+    )
 
-        cte_word_len = func.length(words_cte.c.word)
+    global_query = select(
+        func.coalesce(func.avg(cte_word_len), 0).label("avg_word_length"),
+        func.coalesce(func.min(cte_word_len), 0).label("min_word_length"),
+        func.coalesce(func.max(cte_word_len), 0).label("max_word_length"),
+        global_user_avg_points.label("total_points"),
+        global_user_avg_words.label("words_found_count"),
+    )
 
-        global_user_avg_points = (
-            select(func.coalesce(func.avg(DailyUserSummary.points_earned), 0))
-            .where(DailyUserSummary.date == parsed_date)
-            .scalar_subquery()
-        )
+    global_stats_row = (await db.execute(global_query)).mappings().one_or_none()
 
-        global_user_avg_words = (
-            select(
-                func.coalesce(
-                    func.avg(func.cardinality(DailyUserSummary.words_found)), 0
+    # Compute individual user stats in Python from their single summary row
+    user_specific_row = None
+    if user_id:
+        user_summary = (
+            await db.execute(
+                select(DailyUserSummary).where(
+                    DailyUserSummary.date == parsed_date,
+                    DailyUserSummary.user_id == user_id,
                 )
             )
-            .where(DailyUserSummary.date == parsed_date)
-            .scalar_subquery()
-        )
+        ).scalar_one_or_none()
 
-        historical_global_query = select(
-            func.coalesce(func.avg(cte_word_len), 0).label("avg_word_length"),
-            func.coalesce(func.min(cte_word_len), 0).label("min_word_length"),
-            func.coalesce(func.max(cte_word_len), 0).label("max_word_length"),
-            global_user_avg_points.label("total_points"),
-            global_user_avg_words.label("words_found_count"),
-        )
-
-        global_stats_row = (await db.execute(historical_global_query)).mappings().one_or_none()
-
-        user_specific_row = None
-        if user_id:
-            user_summary = (
-                await db.execute(
-                    select(DailyUserSummary).where(
-                        DailyUserSummary.date == parsed_date,
-                        DailyUserSummary.user_id == user_id,
-                    )
-                )
-            ).scalar_one_or_none()
-
-            if user_summary and user_summary.words_found:
-                word_lengths = [len(w) for w in user_summary.words_found]
-                user_specific_row = {
-                    "avg_word_length": sum(word_lengths) / len(word_lengths),
-                    "min_word_length": min(word_lengths),
-                    "max_word_length": max(word_lengths),
-                    "total_points": user_summary.points_earned,
-                    "words_found_count": len(user_summary.words_found),
-                }
+        if user_summary and user_summary.words_found:
+            word_lengths = [len(w) for w in user_summary.words_found]
+            user_specific_row = {
+                "avg_word_length": sum(word_lengths) / len(word_lengths),
+                "min_word_length": min(word_lengths),
+                "max_word_length": max(word_lengths),
+                "total_points": user_summary.points_earned,
+                "words_found_count": len(user_summary.words_found),
+            }
 
     def format_stats_payload(row):
         if not row or row["words_found_count"] is None or float(row["words_found_count"]) == 0:
