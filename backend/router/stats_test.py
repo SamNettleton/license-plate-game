@@ -8,7 +8,7 @@ TEST_TODAY = date(2026, 8, 18)
 
 
 @pytest.mark.asyncio
-async def test_get_daily_stats_live_window(client, db):
+async def test_get_daily_stats(client, db):
     live_date = date(2026, 8, 18)
 
     await db.execute(
@@ -31,14 +31,19 @@ async def test_get_daily_stats_live_window(client, db):
     await db.execute(
         text(
             """
-            INSERT INTO point_transactions (user_id, points, word, puzzle_date)
-            VALUES 
-                ('stats-user-1', 10, 'cat', :target_date),
-                ('stats-user-1', 20, 'house', :target_date),
-                ('stats-user-2', 50, 'python', :target_date)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
+            VALUES (:user_1, :target_date, 30, :words_1),
+                   (:user_2, :target_date, 50, :words_2)
+            ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
-        {"target_date": live_date},
+        {
+            "user_1": "stats-user-1",
+            "user_2": "stats-user-2",
+            "target_date": live_date,
+            "words_1": ["cat", "house"],
+            "words_2": ["python"],
+        },
     )
     await db.flush()
 
@@ -133,7 +138,6 @@ async def test_get_daily_stats_historical_summary(client, db):
     assert global_stats["total_points"] == 150.0
     assert global_stats["words_found_count"] == 1.5
 
-    # Corrected assertion: hist-user-1 earned 100 points
     user_stats = payload["user_stats"]
     assert user_stats is not None
     assert user_stats["avg_word_length"] == 4.0
@@ -145,7 +149,6 @@ async def test_get_daily_stats_historical_summary(client, db):
 
 @pytest.mark.asyncio
 async def test_get_daily_stats_historical_multi_word_points_accuracy(client, db):
-    """Verifies that historical user points match points_earned exactly without multiplication from words_found array length."""
     historical_date = date(2026, 8, 10)
 
     await db.execute(
@@ -157,7 +160,6 @@ async def test_get_daily_stats_historical_multi_word_points_accuracy(client, db)
         )
     )
 
-    # User with 5 words found and 42 total points
     await db.execute(
         text(
             """
@@ -205,11 +207,12 @@ async def test_get_daily_stats_no_user_id_returns_null_user_stats(client, db):
     await db.execute(
         text(
             """
-            INSERT INTO point_transactions (user_id, points, word, puzzle_date)
-            VALUES ('anon-user', 15, 'word', :target_date)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
+            VALUES ('anon-user', :target_date, 15, :words)
+            ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
-        {"target_date": live_date},
+        {"target_date": live_date, "words": ["word"]},
     )
     await db.flush()
 

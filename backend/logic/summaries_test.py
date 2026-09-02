@@ -22,7 +22,6 @@ async def seed_users(db: AsyncSession, user_ids: list[str]):
 
 @pytest.mark.asyncio
 async def test_build_daily_summaries_single_date(db: AsyncSession):
-    # Seed foreign keys
     await seed_users(db, ["user-1", "user-2"])
     target_date = date(2026, 8, 13)
     
@@ -49,7 +48,7 @@ async def test_build_daily_summaries_single_date(db: AsyncSession):
     row1 = res_user1.fetchone()
     assert row1 is not None
     assert row1.points_earned == 25
-    assert row1.words_found == ['apple', 'banana']
+    assert sorted(row1.words_found) == ['apple', 'banana']
 
 
 @pytest.mark.asyncio
@@ -79,7 +78,43 @@ async def test_build_daily_summaries_upsert_on_conflict(db: AsyncSession):
     )
     row = res.fetchone()
     assert row.points_earned == 30
-    assert row.words_found == ['first', 'second']
+    assert sorted(row.words_found) == ['first', 'second']
+
+
+@pytest.mark.asyncio
+async def test_build_daily_summaries_merges_with_direct_writes(db: AsyncSession):
+    """Verifies worker does NOT overwrite direct summary writes from updated clients."""
+    await seed_users(db, ["user-1"])
+    p_date = date(2026, 8, 13)
+
+    # Direct write from new client route (e.g. 13 points for 'leapfrog')
+    await db.execute(
+        text("""
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
+            VALUES ('user-1', :p_date, 13, ARRAY['leapfrog']);
+        """),
+        {"p_date": p_date}
+    )
+    await db.commit()
+
+    # Legacy transaction write from older client (e.g. 10 points for 'apple')
+    await db.execute(
+        text("INSERT INTO point_transactions (user_id, puzzle_date, points, word) VALUES ('user-1', :p_date, 10, 'apple')"),
+        {"p_date": p_date}
+    )
+    await db.commit()
+
+    await build_daily_summaries(db, target_date=p_date)
+
+    res = await db.execute(
+        text("SELECT points_earned, words_found FROM daily_user_summaries WHERE user_id = 'user-1' AND date = :p_date"),
+        {"p_date": p_date}
+    )
+    row = res.fetchone()
+
+    # Should take the higher points and merge words without duplicates
+    assert row.points_earned == 23
+    assert sorted(row.words_found) == ['apple', 'leapfrog']
 
 
 @pytest.mark.asyncio

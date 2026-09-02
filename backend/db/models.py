@@ -16,6 +16,9 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+# DEPRECATED: PointTransaction is no longer written to or read from.
+# All daily stats and leaderboard queries now rely on DailyUserSummary.
+# Pending full schema drop migration.
 class PointTransaction(Base):
     __tablename__ = "point_transactions"
 
