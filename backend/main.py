@@ -36,8 +36,6 @@ app.include_router(words.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 
-# unmask_url=True ensures that /api/plate/ABC and /api/plate/XYZ 
-# are grouped together in metrics rather than creating thousands of separate entries.
 instrumentator = Instrumentator(
     should_group_status_codes=True,
     should_ignore_untemplated=True,
