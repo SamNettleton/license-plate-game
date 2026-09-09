@@ -35,7 +35,7 @@ async def get_daily_plate(
     if user_id:
         stmt = select(DailyUserSummary).where(
             DailyUserSummary.user_id == user_id,
-            DailyUserSummary.date == parsed_date  # Pass python date object here
+            DailyUserSummary.date == parsed_date
         )
         result = await db.execute(stmt)
         summary = result.scalars().first()
