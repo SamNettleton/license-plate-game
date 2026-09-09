@@ -66,7 +66,22 @@ export default function ResultsModal({
   };
   const currentTierIndex = getCurrentTierIndex();
 
+  // Check if initial baseline tiers exist in tierTimes.
+  const hasValidTierTimes = React.useMemo(() => {
+    if (!tierTimes || Object.keys(tierTimes).length === 0) return false;
+
+    // Check if at least the first tier ('Good Start') is tracked in tierTimes
+    const firstTierLabel = TIER_THRESHOLDS[1]?.label;
+    return Boolean(firstTierLabel && firstTierLabel in tierTimes);
+  }, [tierTimes]);
+
+  const shouldDisplayTierSplits = displayTimes && hasValidTierTimes;
+
   const resolvedTierTimes = React.useMemo(() => {
+    if (!shouldDisplayTierSplits) {
+      return [];
+    }
+
     let lastValidTime = 0;
 
     return TIER_THRESHOLDS.map((tier, index) => {
@@ -190,7 +205,7 @@ export default function ResultsModal({
                   </Box>
                 </Box>
 
-                {displayTimes && (
+                {shouldDisplayTierSplits && (
                   <Box sx={timeContainerStyles}>
                     {isFutureTier ? (
                       <Typography variant="body2" color="text.disabled" sx={monoFontStyles}>

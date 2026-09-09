@@ -8,11 +8,16 @@ vi.mock('@/utils/shareFormatter', () => ({
   formatGameStatsForSharing: vi.fn().mockReturnValue('License Plate Game 50/100'),
 }));
 
+// Valid baseline tierTimes to pass hasValidTierTimes check in default tests
+const validTierTimes = {
+  'Good Start': 17,
+};
+
 const defaultProps = {
   open: true,
   onClose: vi.fn(),
   elapsedSeconds: 0,
-  tierTimes: {},
+  tierTimes: validTierTimes,
   points: 0,
   goalPoints: 100,
   plate: 'LPG',
@@ -61,7 +66,7 @@ describe('ResultsModal Component', () => {
       expect(within(progressContainer).getByText(/50 \/ 100 pts/)).toBeInTheDocument();
     });
 
-    it('renders total time when displayTimes is true', () => {
+    it('renders total time when displayTimes is true and tierTimes are valid', () => {
       renderWithClient(<ResultsModal {...defaultProps} displayTimes={true} elapsedSeconds={125} />);
 
       const progressContainer = screen.getByTestId('progress-summary');
@@ -155,6 +160,30 @@ describe('ResultsModal Component', () => {
 
       const dashes = screen.getAllByText('—');
       expect(dashes.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('legacy tierTimes handling (missing initial baseline tiers)', () => {
+    it('shows total time but hides tier splits when tierTimes is missing baseline tiers', () => {
+      renderWithClient(
+        <ResultsModal
+          {...defaultProps}
+          displayTimes={true}
+          tierTimes={{
+            Supersonic: 378,
+            'Full Throttle': 327,
+          }}
+          elapsedSeconds={400}
+        />,
+      );
+
+      const progressContainer = screen.getByTestId('progress-summary');
+      // Total time is shown
+      expect(within(progressContainer).getByText(/Total time: 6:40/i)).toBeInTheDocument();
+
+      // Split column components/dashes are suppressed
+      expect(screen.queryByText('—')).not.toBeInTheDocument();
+      expect(screen.queryByText('Total 6:18')).not.toBeInTheDocument();
     });
   });
 
