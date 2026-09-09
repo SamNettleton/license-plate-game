@@ -31,9 +31,9 @@ async def test_get_daily_stats(client, db):
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
-            VALUES (:user_1, :target_date, 30, :words_1),
-                   (:user_2, :target_date, 50, :words_2)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
+            VALUES (:user_1, :target_date, 30, :words_1, :elapsed_1, '{}'::jsonb),
+                   (:user_2, :target_date, 50, :words_2, :elapsed_2, '{}'::jsonb)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
@@ -43,6 +43,8 @@ async def test_get_daily_stats(client, db):
             "target_date": live_date,
             "words_1": ["cat", "house"],
             "words_2": ["python"],
+            "elapsed_1": 45,
+            "elapsed_2": 30,
         },
     )
     await db.flush()
@@ -100,9 +102,9 @@ async def test_get_daily_stats_historical_summary(client, db):
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
-            VALUES (:user_1, :target_date, :points_1, :words_1),
-                   (:user_2, :target_date, :points_2, :words_2)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
+            VALUES (:user_1, :target_date, :points_1, :words_1, :elapsed_1, '{}'::jsonb),
+                   (:user_2, :target_date, :points_2, :words_2, :elapsed_2, '{}'::jsonb)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
@@ -114,6 +116,8 @@ async def test_get_daily_stats_historical_summary(client, db):
             "points_2": 200,
             "words_1": ["code", "test"],
             "words_2": ["fastapi"],
+            "elapsed_1": 60,
+            "elapsed_2": 45,
         },
     )
     await db.flush()
@@ -163,14 +167,15 @@ async def test_get_daily_stats_historical_multi_word_points_accuracy(client, db)
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
-            VALUES ('multi-word-user', :target_date, 42, :words)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
+            VALUES ('multi-word-user', :target_date, 42, :words, :elapsed, '{}'::jsonb)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
         {
             "target_date": historical_date,
             "words": ["apple", "banana", "cherry", "date", "elderberry"],
+            "elapsed": 120,
         },
     )
     await db.flush()
@@ -207,12 +212,12 @@ async def test_get_daily_stats_no_user_id_returns_null_user_stats(client, db):
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
-            VALUES ('anon-user', :target_date, 15, :words)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
+            VALUES ('anon-user', :target_date, 15, :words, :elapsed, '{}'::jsonb)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
-        {"target_date": live_date, "words": ["word"]},
+        {"target_date": live_date, "words": ["word"], "elapsed": 15},
     )
     await db.flush()
 

@@ -20,11 +20,12 @@ function Daily() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['dailyPlate', today],
-    queryFn: fetchDailyPlate,
+    queryKey: ['dailyPlate', today, playerId],
+    queryFn: () => fetchDailyPlate(playerId, today),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
+    enabled: !!playerId,
   });
 
   if (isLoading) return <LoadingDisplay message="Crafting a daily plate..." />;
@@ -38,6 +39,10 @@ function Daily() {
           plate={challenge.sequence}
           solutionsCount={challenge.solutionsCount}
           goalPoints={challenge.goalPoints}
+          wordsFound={challenge.wordsFound}
+          pointsEarned={challenge.pointsEarned}
+          elapsedSeconds={challenge.elapsedSeconds}
+          tierTimes={challenge.tierTimes}
           mode={GameMode.DAILY}
           puzzleDate={today}
           userId={playerId}

@@ -6,7 +6,6 @@ import { theme } from './material-ui/Theme';
 
 import Home from '@/pages/Home';
 import About from '@/pages/About';
-import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
 import Leaderboard from '@/pages/Leaderboard';
 import Stats from '@/pages/Stats';
@@ -50,7 +49,6 @@ function AppContent() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/daily" element={<Daily />} />
-            <Route path="/practice" element={<Practice />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/stats" element={<Stats />} />
           </Routes>

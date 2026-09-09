@@ -8,7 +8,6 @@ function Home() {
   const navigate = useNavigate();
 
   const dailyPage = () => navigate('/daily');
-  const practicePage = () => navigate('/practice');
 
   const [showInstructions, setShowInstructions] = React.useState(false);
 
@@ -35,9 +34,6 @@ function Home() {
       <Stack spacing={2} sx={{ width: '80%', maxWidth: '300px' }}>
         <Button variant="contained" size="large" fullWidth onClick={dailyPage} sx={buttonStyles}>
           Daily Challenge
-        </Button>
-        <Button variant="outlined" size="large" fullWidth onClick={practicePage} sx={buttonStyles}>
-          Practice
         </Button>
       </Stack>
 

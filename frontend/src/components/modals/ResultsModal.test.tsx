@@ -4,6 +4,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ResultsModal from './ResultsModal';
 
+vi.mock('@/utils/shareFormatter', () => ({
+  formatGameStatsForSharing: vi.fn().mockReturnValue('License Plate Game 50/100'),
+}));
+
 const defaultProps = {
   open: true,
   onClose: vi.fn(),
@@ -16,7 +20,6 @@ const defaultProps = {
   displayTimes: true,
 };
 
-// Instantiated outside the render wrapper to prevent unnecessary reinstantiation
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -76,13 +79,14 @@ describe('ResultsModal Component', () => {
   });
 
   describe('tier rows', () => {
-    it('renders all 8 tiers', () => {
+    it('renders all tiers', () => {
       renderWithClient(<ResultsModal {...defaultProps} />);
 
       const tierContainer = screen.getByTestId('tier-list');
 
       expect(within(tierContainer).getByText('Parked')).toBeInTheDocument();
       expect(within(tierContainer).getByText('Good Start')).toBeInTheDocument();
+      expect(within(tierContainer).getByText('Gaining Speed')).toBeInTheDocument();
       expect(within(tierContainer).getByText('Cruising')).toBeInTheDocument();
       expect(within(tierContainer).getByText('In the Fast Lane')).toBeInTheDocument();
       expect(within(tierContainer).getByText('High Performance')).toBeInTheDocument();
@@ -95,15 +99,13 @@ describe('ResultsModal Component', () => {
         <ResultsModal
           {...defaultProps}
           displayTimes={true}
-          elapsedSeconds={75} // 1 minute 15 seconds
+          elapsedSeconds={75}
           points={0}
           goalPoints={100}
         />,
       );
 
-      // Primary split duration for Tier 0 (Parked)
       expect(screen.getByText('1:15')).toBeInTheDocument();
-      // Total subtext should NOT appear for the first tier (index 0)
       expect(screen.queryByText(/Total 1:15/i)).not.toBeInTheDocument();
     });
 
@@ -112,22 +114,17 @@ describe('ResultsModal Component', () => {
         <ResultsModal
           {...defaultProps}
           displayTimes={true}
+          elapsedSeconds={40}
           tierTimes={{
-            Parked: 17, // Tier 1 split: 0:17
-            'Good Start': 40, // Cumulative: 0:40 -> Split duration: 0:23
+            'Good Start': 17,
           }}
-          points={30} // Good Start tier active
+          points={2}
           goalPoints={100}
         />,
       );
 
-      // Tier 1 (Parked): split time 0:17
       expect(screen.getByText('0:17')).toBeInTheDocument();
-
-      // Tier 2 (Good Start): split time (40s - 17s = 23s) -> "0:23"
       expect(screen.getByText('0:23')).toBeInTheDocument();
-
-      // Tier 2 (Good Start): cumulative subtext -> "Total 0:40"
       expect(screen.getByText('Total 0:40')).toBeInTheDocument();
     });
 
@@ -137,10 +134,10 @@ describe('ResultsModal Component', () => {
           {...defaultProps}
           displayTimes={false}
           tierTimes={{
-            Parked: 17,
-            'Good Start': 40,
+            'Good Start': 17,
+            'Gaining Speed': 40,
           }}
-          points={30}
+          points={25}
           goalPoints={100}
         />,
       );
@@ -155,7 +152,7 @@ describe('ResultsModal Component', () => {
       renderWithClient(
         <ResultsModal {...defaultProps} displayTimes={true} points={0} goalPoints={100} />,
       );
-      // At 0% (Parked), all tiers after Parked are future
+
       const dashes = screen.getAllByText('—');
       expect(dashes.length).toBeGreaterThan(0);
     });
@@ -172,7 +169,6 @@ describe('ResultsModal Component', () => {
 
   describe('share button', () => {
     beforeEach(() => {
-      // Mock the clipboard API
       Object.assign(navigator, {
         clipboard: {
           writeText: vi.fn().mockResolvedValue(undefined),
@@ -200,13 +196,8 @@ describe('ResultsModal Component', () => {
       const shareButton = screen.getByRole('button', { name: /share results/i });
       fireEvent.click(shareButton);
 
-      // Verify clipboard write occurred
       expect(navigator.clipboard.writeText).toHaveBeenCalledOnce();
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        expect.stringContaining('License Plate Game'),
-      );
-
-      // Verify feedback snackbar/toast renders
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('License Plate Game 50/100');
       expect(await screen.findByText(/results copied to clipboard/i)).toBeInTheDocument();
     });
   });

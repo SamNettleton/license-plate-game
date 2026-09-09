@@ -1,7 +1,6 @@
 from database import Base
 from sqlalchemy import Column, ForeignKey, Index, String, Integer, DateTime, Date, PrimaryKeyConstraint, func
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
 class Dictionary(Base):
     __tablename__ = "dictionary"
@@ -40,6 +39,8 @@ class DailyUserSummary(Base):
     date = Column(Date, nullable=False)
     points_earned = Column(Integer, nullable=False, default=0)
     words_found = Column(ARRAY(String), nullable=False, default=list)
+    elapsed_seconds = Column(Integer, nullable=False, default=0)
+    tier_times = Column(JSONB, nullable=False, default=dict)
 
     __table_args__ = (
         PrimaryKeyConstraint("user_id", "date"),

@@ -1,14 +1,14 @@
 from datetime import date
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select, Date, cast
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import func, select, cast, literal_column
+from sqlalchemy.dialects.postgresql import insert, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.metrics import GUESSES_COUNTER
 from database import get_db
 from db.models import DailyUserSummary
 from logic import game
-from schemas.words import WordCheckRequest, WordCheckResponse
+from schemas.words import WordCheckRequest, WordCheckResponse, TierTimesUpdateRequest
 from services import dictionary
 
 router = APIRouter(prefix="/words", tags=["words"])
@@ -65,6 +65,7 @@ async def check_word(payload: WordCheckRequest, db: AsyncSession = Depends(get_d
     GUESSES_COUNTER.labels(status="valid", app_name="license-plate-backend").inc()
 
     if puzzle_date_obj and payload.user_id:
+        elapsed_sec = payload.elapsed_seconds or 0
         stmt = (
             insert(DailyUserSummary)
             .values(
@@ -72,12 +73,17 @@ async def check_word(payload: WordCheckRequest, db: AsyncSession = Depends(get_d
                 date=puzzle_date_obj,
                 points_earned=points,
                 words_found=[word],
+                elapsed_seconds=elapsed_sec,
             )
             .on_conflict_do_update(
                 index_elements=["user_id", "date"],
                 set_={
                     "points_earned": DailyUserSummary.points_earned + points,
                     "words_found": func.array_append(DailyUserSummary.words_found, word),
+                    "elapsed_seconds": func.greatest(
+                        func.coalesce(DailyUserSummary.elapsed_seconds, 0),
+                        elapsed_sec,
+                    ),
                 },
             )
         )
@@ -89,3 +95,29 @@ async def check_word(payload: WordCheckRequest, db: AsyncSession = Depends(get_d
         "message": f"Nice one! +{points}",
         "points": points
     }
+
+@router.post("/tier-times")
+async def update_tier_times(
+    payload: TierTimesUpdateRequest, db: AsyncSession = Depends(get_db)
+):
+    puzzle_date_obj = date.fromisoformat(payload.puzzle_date)
+
+    stmt = (
+        insert(DailyUserSummary)
+        .values(
+            user_id=payload.user_id,
+            date=puzzle_date_obj,
+            tier_times=payload.tier_times,
+        )
+        .on_conflict_do_update(
+            index_elements=["user_id", "date"],
+            set_={
+                "tier_times": func.coalesce(
+                    DailyUserSummary.tier_times, literal_column("'{}'::jsonb")
+                ).op("||")(cast(payload.tier_times, JSONB)),
+            },
+        )
+    )
+    await db.execute(stmt)
+    await db.commit()
+    return {"status": "success"}

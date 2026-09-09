@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { checkWordValidity } from '@/api/wordService';
+import { checkWordValidity, updateTierTimes } from '@/api/wordService';
 import PuzzleDisplay from './PuzzleDisplay';
 import ResultDisplay from './ResultDisplay/ResultDisplay';
 import MobileResultDisplay from './ResultDisplay/MobileResultDisplay';
@@ -7,31 +7,52 @@ import ResultBar from './ResultDisplay/ResultBar';
 import ResultsModal from '@/components/modals/ResultsModal';
 import { Box, Grid } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
-import { GameMode, STORAGE_KEY } from '@/constants/game';
+import { GameMode } from '@/constants/game';
 import { useQueryClient } from '@tanstack/react-query';
 import { faro } from '@/faro';
 import { useSettings } from '@/context/SettingsContext';
-
-type SavedProgress = {
-  solutions: string[];
-  points: number;
-  lastUpdated: string; // Storing as YYYY-MM-DD
-  tierTimes: Record<string, number>;
-  elapsedSeconds: number;
-};
 
 type Props = {
   plate: string;
   solutionsCount: number;
   goalPoints: number;
+  wordsFound: string[];
+  pointsEarned: number;
+  elapsedSeconds: number;
+  tierTimes: Record<string, number>;
   mode: GameMode;
   puzzleDate?: string; // Optional, only for daily mode
   userId?: string; // Optional, only for daily mode
 };
 
-function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
+function Game({
+  plate,
+  goalPoints,
+  wordsFound,
+  pointsEarned,
+  elapsedSeconds,
+  tierTimes,
+  mode,
+  puzzleDate,
+  userId,
+}: Props) {
   const queryClient = useQueryClient();
-  const [state, dispatch] = React.useReducer(gameReducer, mode, createInitialState);
+  const [state, dispatch] = React.useReducer(
+    gameReducer,
+    { wordsFound, pointsEarned, elapsedSeconds, tierTimes },
+    createInitialState,
+  );
+
+  // Re-initialize state when loading a different daily puzzle or new plate
+  React.useEffect(() => {
+    const freshState = createInitialState({
+      wordsFound,
+      pointsEarned,
+      elapsedSeconds,
+      tierTimes,
+    });
+    dispatch({ type: 'LOAD_PUZZLE', payload: freshState });
+  }, [plate, puzzleDate, wordsFound, pointsEarned, elapsedSeconds, tierTimes]);
 
   const [showAlert, setShowAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -89,6 +110,19 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
   }, [isModalOpen, visibility]);
 
   React.useEffect(() => {
+    const isDaily = mode === GameMode.DAILY;
+    const hasTiers = Object.keys(state.tierTimes).length > 0;
+
+    if (!isDaily || !userId || !puzzleDate || !hasTiers) return;
+
+    updateTierTimes(userId, puzzleDate, state.tierTimes).catch((err) => {
+      if (faro) {
+        faro.api.pushLog([`Failed to sync tier times: ${String(err)}`]);
+      }
+    });
+  }, [state.tierTimes, userId, puzzleDate, mode]);
+
+  React.useEffect(() => {
     if (!state.lastFeedback) return;
     setShowAlert(true);
     const timer = setTimeout(() => {
@@ -96,21 +130,6 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
     }, 2000);
     return () => clearTimeout(timer);
   }, [state.lastFeedback]);
-
-  React.useEffect(() => {
-    const storageKey = STORAGE_KEY[mode];
-    const progress: SavedProgress = {
-      solutions: state.solutions,
-      points: state.points,
-      lastUpdated: new Date().toLocaleDateString('en-CA'),
-      tierTimes: state.tierTimes,
-      elapsedSeconds: state.elapsedSeconds,
-    };
-
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(progress));
-    } catch (err) {}
-  }, [state.solutions, state.points, state.tierTimes, state.elapsedSeconds, mode]);
 
   const checkGuess = async () => {
     if (isSubmitting || !state.guess.trim()) return;
@@ -126,12 +145,16 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
     }
     try {
       const isDaily = mode === GameMode.DAILY;
-
-      // Use the fixed puzzleDate prop for daily mode, or null for practice
       const activePuzzleDate = isDaily ? puzzleDate : undefined;
       const activeUserId = isDaily ? userId : undefined;
 
-      const result = await checkWordValidity(lowercaseGuess, plate, activeUserId, activePuzzleDate);
+      const result = await checkWordValidity(
+        lowercaseGuess,
+        plate,
+        activeUserId,
+        activePuzzleDate,
+        state.elapsedSeconds,
+      );
 
       if (result.is_valid) {
         dispatch({
@@ -201,7 +224,7 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
             goalPoints={goalPoints}
             elapsedSeconds={showInGameTimer ? state.elapsedSeconds : undefined}
             onClick={() => setIsModalOpen(true)}
-          ></ResultBar>
+          />
           <Box sx={{ position: 'relative', mt: 1 }}>
             <MobileResultDisplay
               solutions={state.solutions}
@@ -230,8 +253,8 @@ function Game({ plate, goalPoints, mode, puzzleDate, userId }: Props) {
           goalPoints={goalPoints}
           elapsedSeconds={showInGameTimer ? state.elapsedSeconds : undefined}
           onClick={() => setIsModalOpen(true)}
-        ></ResultBar>
-        <ResultDisplay solutions={state.solutions}></ResultDisplay>
+        />
+        <ResultDisplay solutions={state.solutions} />
       </Grid>
       <ResultsModal
         elapsedSeconds={state.elapsedSeconds}
