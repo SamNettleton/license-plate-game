@@ -1,4 +1,4 @@
-import { GameMode, STORAGE_KEY, getTierForPoints } from '@/constants/game';
+import { getTierForPoints } from '@/constants/game';
 import { GameFeedback } from '@/types/game';
 
 export type GameState = {
@@ -24,6 +24,7 @@ export type GameAction =
       goalPoints: number;
     }
   | { type: 'RESET_GAME' }
+  | { type: 'LOAD_PUZZLE'; payload: GameState }
   | { type: 'SET_FEEDBACK_MESSAGE'; message: string; feedbackType: 'error' | 'info' }
   | { type: 'START_TIMER' }
   | { type: 'PAUSE_TIMER' }
@@ -40,37 +41,28 @@ export const initialState: GameState = {
   timerRunning: false,
 };
 
-export function createInitialState(mode: GameMode): GameState {
-  if (typeof window === 'undefined') return initialState;
+type InitialStateArgs = {
+  wordsFound?: string[];
+  pointsEarned?: number;
+  tierTimes?: Record<string, number>;
+  elapsedSeconds?: number;
+};
 
-  const storageKey = STORAGE_KEY[mode];
-  const saved = localStorage.getItem(storageKey);
+export function createInitialState({
+  wordsFound = [],
+  pointsEarned = 0,
+  tierTimes = {},
+  elapsedSeconds = 0,
+}: InitialStateArgs = {}): GameState {
+  const sortedSolutions = [...wordsFound].sort((a, b) => a.localeCompare(b));
 
-  if (!saved) return initialState;
-
-  try {
-    const parsed = JSON.parse(saved);
-
-    if (mode === 'daily') {
-      const today = new Date().toLocaleDateString('en-CA');
-      if (parsed.lastUpdated !== today) {
-        localStorage.removeItem(storageKey);
-        return initialState;
-      }
-    }
-
-    return {
-      ...initialState,
-      solutions: parsed.solutions || [],
-      points: parsed.points || 0,
-      tierTimes: parsed.tierTimes || {},
-      elapsedSeconds: parsed.elapsedSeconds || 0,
-      timerRunning: false,
-    };
-  } catch (error) {
-    console.error('Malformed save data found:', error);
-    return initialState;
-  }
+  return {
+    ...initialState,
+    solutions: sortedSolutions,
+    points: pointsEarned,
+    elapsedSeconds,
+    tierTimes,
+  };
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -94,8 +86,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newTierLabel = getTierForPoints(updatedPoints, action.goalPoints);
       const updatedTierTimes = { ...state.tierTimes };
 
-      if (newTierLabel !== currentTierLabel) {
-        updatedTierTimes[currentTierLabel] = state.elapsedSeconds;
+      if (newTierLabel !== currentTierLabel && !updatedTierTimes[newTierLabel]) {
+        updatedTierTimes[newTierLabel] = state.elapsedSeconds;
       }
 
       return {
@@ -119,6 +111,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'RESET_GAME':
       return initialState;
+
+    case 'LOAD_PUZZLE':
+      return action.payload;
 
     case 'SET_FEEDBACK_MESSAGE':
       return {

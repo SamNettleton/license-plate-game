@@ -10,6 +10,7 @@ import { useSettings } from '@/context/SettingsContext';
 // Mock wordService API calls
 vi.mock('@/api/wordService', () => ({
   checkWordValidity: vi.fn(),
+  updateTierTimes: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 // Mock SettingsContext
@@ -18,7 +19,7 @@ vi.mock('@/context/SettingsContext', () => ({
 }));
 
 // Mock Grafana Faro telemetry import
-vi.mock('@/App', () => ({
+vi.mock('@/faro', () => ({
   faro: {
     api: {
       pushError: vi.fn(),
@@ -26,6 +27,17 @@ vi.mock('@/App', () => ({
     },
   },
 }));
+
+const defaultGameProps = {
+  plate: 'LPG',
+  solutionsCount: 10,
+  goalPoints: 100,
+  wordsFound: [],
+  pointsEarned: 0,
+  elapsedSeconds: 0,
+  tierTimes: {},
+  mode: GameMode.DAILY,
+};
 
 describe('Game Component', () => {
   let queryClient: QueryClient;
@@ -54,7 +66,7 @@ describe('Game Component', () => {
     it('renders without crashing and displays initial plate and progress', () => {
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} />
         </QueryClientProvider>,
       );
 
@@ -62,6 +74,23 @@ describe('Game Component', () => {
 
       const scoreElements = screen.getAllByText(/0.*\/.*100/i);
       expect(scoreElements[0]).toBeInTheDocument();
+    });
+
+    it('hydrates initial puzzle state from props when provided', () => {
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game
+            {...defaultGameProps}
+            wordsFound={['leapfrog']}
+            pointsEarned={15}
+            elapsedSeconds={42}
+            tierTimes={{ bronze: 30 }}
+          />
+        </QueryClientProvider>,
+      );
+
+      expect(screen.getAllByText(/Leapfrog/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/15.*\/.*100/i)[0]).toBeInTheDocument();
     });
   });
 
@@ -76,11 +105,11 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} elapsedSeconds={125} />
         </QueryClientProvider>,
       );
 
-      expect(screen.getAllByText('0:00').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('2:05').length).toBeGreaterThan(0);
     });
 
     it('hides elapsedSeconds in ResultBar when displayTimeOption is "resultsOnly"', () => {
@@ -93,11 +122,11 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} elapsedSeconds={125} />
         </QueryClientProvider>,
       );
 
-      expect(screen.queryByText('0:00')).not.toBeInTheDocument();
+      expect(screen.queryByText('2:05')).not.toBeInTheDocument();
     });
   });
 
@@ -113,7 +142,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} />
         </QueryClientProvider>,
       );
 
@@ -130,7 +159,7 @@ describe('Game Component', () => {
       });
     });
 
-    it('forwards userId and puzzleDate to the API in daily mode', async () => {
+    it('forwards userId, puzzleDate, and elapsedSeconds to the API in daily mode', async () => {
       vi.mocked(wordService.checkWordValidity).mockResolvedValue({
         is_valid: true,
         points: 10,
@@ -142,12 +171,10 @@ describe('Game Component', () => {
       render(
         <QueryClientProvider client={queryClient}>
           <Game
-            plate="LPG"
-            solutionsCount={10}
-            goalPoints={100}
-            mode={GameMode.DAILY}
+            {...defaultGameProps}
             puzzleDate="2026-08-11"
             userId="test-user-id"
+            elapsedSeconds={15}
           />
         </QueryClientProvider>,
       );
@@ -160,6 +187,7 @@ describe('Game Component', () => {
           'LPG',
           'test-user-id',
           '2026-08-11',
+          expect.any(Number),
         );
       });
     });
@@ -175,7 +203,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} />
         </QueryClientProvider>,
       );
 
@@ -196,6 +224,27 @@ describe('Game Component', () => {
     });
   });
 
+  describe('Tier Times Sync', () => {
+    it('calls updateTierTimes when tierTimes state changes in daily mode with a user', async () => {
+      render(
+        <QueryClientProvider client={queryClient}>
+          <Game
+            {...defaultGameProps}
+            userId="test-user-id"
+            puzzleDate="2026-08-11"
+            tierTimes={{ bronze: 25 }}
+          />
+        </QueryClientProvider>,
+      );
+
+      await waitFor(() => {
+        expect(wordService.updateTierTimes).toHaveBeenCalledWith('test-user-id', '2026-08-11', {
+          bronze: 25,
+        });
+      });
+    });
+  });
+
   describe('Guess Recall', () => {
     it('recalls the last submitted guess when pressing Enter with an empty guess (physical keyboard)', async () => {
       vi.mocked(wordService.checkWordValidity).mockResolvedValue({
@@ -208,7 +257,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} />
         </QueryClientProvider>,
       );
 
@@ -218,7 +267,6 @@ describe('Game Component', () => {
         expect(wordService.checkWordValidity).toHaveBeenCalledTimes(1);
       });
 
-      // Pressing Enter when guess is empty should recall LEAPFROG into the input field
       await user.keyboard('{Enter}');
 
       expect(screen.getByText('LEAPFROG')).toBeInTheDocument();
@@ -235,7 +283,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} />
         </QueryClientProvider>,
       );
 
@@ -262,7 +310,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="LPG" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} />
         </QueryClientProvider>,
       );
 
@@ -288,7 +336,7 @@ describe('Game Component', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <Game plate="FAL" solutionsCount={10} goalPoints={100} mode={GameMode.DAILY} />
+          <Game {...defaultGameProps} plate="FAL" />
         </QueryClientProvider>,
       );
 

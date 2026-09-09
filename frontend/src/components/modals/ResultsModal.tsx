@@ -66,12 +66,31 @@ export default function ResultsModal({
   };
   const currentTierIndex = getCurrentTierIndex();
 
-  const resolvedTierTimes = TIER_THRESHOLDS.map((tier, index) => {
-    if (index === currentTierIndex) {
-      return elapsedSeconds;
-    }
-    return tierTimes[tier.label] ?? 0;
-  });
+  const resolvedTierTimes = React.useMemo(() => {
+    let lastValidTime = 0;
+
+    return TIER_THRESHOLDS.map((tier, index) => {
+      if (index > currentTierIndex) {
+        return 0;
+      }
+
+      if (index === currentTierIndex) {
+        return Math.max(elapsedSeconds, lastValidTime);
+      }
+
+      const nextTier = TIER_THRESHOLDS[index + 1];
+      const timeWhenLeft =
+        (nextTier ? tierTimes[nextTier.label] : undefined) ??
+        tierTimes[tier.label] ??
+        elapsedSeconds;
+
+      if (timeWhenLeft >= lastValidTime) {
+        lastValidTime = timeWhenLeft;
+      }
+
+      return lastValidTime;
+    });
+  }, [currentTierIndex, elapsedSeconds, tierTimes]);
 
   const handleShare = async () => {
     try {

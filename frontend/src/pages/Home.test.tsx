@@ -22,7 +22,7 @@ describe('Home Page', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    (useNavigate as any).mockReturnValue(mockNavigate);
+    vi.mocked(useNavigate).mockReturnValue(mockNavigate);
   });
 
   const renderComponent = () =>
@@ -39,11 +39,10 @@ describe('Home Page', () => {
       expect(screen.getByRole('heading', { name: /license plate game/i })).toBeInTheDocument();
     });
 
-    it('renders navigation buttons for game modes', () => {
+    it('renders the daily challenge button', () => {
       renderComponent();
 
       expect(screen.getByRole('button', { name: /daily challenge/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /practice/i })).toBeInTheDocument();
     });
   });
 
@@ -55,15 +54,6 @@ describe('Home Page', () => {
       fireEvent.click(dailyButton);
 
       expect(mockNavigate).toHaveBeenCalledWith('/daily');
-    });
-
-    it('navigates to /practice when Practice button is clicked', () => {
-      renderComponent();
-
-      const practiceButton = screen.getByRole('button', { name: /practice/i });
-      fireEvent.click(practiceButton);
-
-      expect(mockNavigate).toHaveBeenCalledWith('/practice');
     });
   });
 

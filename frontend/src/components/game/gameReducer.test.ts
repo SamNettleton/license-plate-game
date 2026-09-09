@@ -1,39 +1,26 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { gameReducer, initialState, createInitialState, GameState } from './gameReducer';
-import { GameMode, getTierForPoints, TIER_THRESHOLDS } from '@/constants/game';
-
-beforeEach(() => {
-  localStorage.clear();
-});
-
-afterEach(() => {
-  localStorage.clear();
-});
+import { getTierForPoints } from '@/constants/game';
 
 describe('gameReducer', () => {
   describe('createInitialState', () => {
-    it('returns initialState when localStorage is empty', () => {
-      const state = createInitialState(GameMode.PRACTICE);
+    it('returns default initialState when called without arguments', () => {
+      const state = createInitialState();
       expect(state).toEqual(initialState);
     });
 
-    it('restores saved solutions and points for practice mode', () => {
-      localStorage.setItem(
-        'lp_practice',
-        JSON.stringify({ solutions: ['leapfrog'], points: 13, lastUpdated: '2024-01-01' }),
-      );
-      const state = createInitialState(GameMode.PRACTICE);
-      expect(state.solutions).toEqual(['leapfrog']);
-      expect(state.points).toBe(13);
-    });
+    it('hydrates initial state from provided parameters and alphabetizes solutions', () => {
+      const state = createInitialState({
+        wordsFound: ['limping', 'leapfrog'],
+        pointsEarned: 23,
+        elapsedSeconds: 45,
+        tierTimes: { Bronze: 12 },
+      });
 
-    it('returns fresh state for daily mode when saved date is stale', () => {
-      localStorage.setItem(
-        'lp_daily',
-        JSON.stringify({ solutions: ['oldword'], points: 5, lastUpdated: '2000-01-01' }),
-      );
-      const state = createInitialState(GameMode.DAILY);
-      expect(state).toEqual(initialState);
+      expect(state.solutions).toEqual(['leapfrog', 'limping']);
+      expect(state.points).toBe(23);
+      expect(state.elapsedSeconds).toBe(45);
+      expect(state.tierTimes).toEqual({ Bronze: 12 });
     });
   });
 
@@ -88,7 +75,7 @@ describe('gameReducer', () => {
     });
 
     describe('ADD_SOLUTION', () => {
-      it('adds word, updates points, and clears the guess', () => {
+      it('adds word, updates points, clears guess, and sets feedback', () => {
         const state: GameState = {
           ...initialState,
           guess: 'leapfrog',
@@ -108,26 +95,6 @@ describe('gameReducer', () => {
         expect(newState.solutions).toEqual(['leapfrog']);
         expect(newState.points).toBe(13);
         expect(newState.guess).toBe('');
-        expect(newState.lastFeedback?.message).toBe('Nice one! +13');
-      });
-
-      it('sets success feedback and clears the guess', () => {
-        const state: GameState = {
-          ...initialState,
-          guess: 'leapfrog',
-          points: 0,
-          solutions: [],
-          tierTimes: {},
-        };
-        const action = {
-          type: 'ADD_SOLUTION' as const,
-          guess: 'leapfrog',
-          feedback: 'Nice one! +13',
-          points: 13,
-          goalPoints: 100,
-        };
-        const newState = gameReducer(state, action);
-
         expect(newState.lastFeedback).toEqual({
           message: 'Nice one! +13',
           type: 'success',
@@ -172,28 +139,50 @@ describe('gameReducer', () => {
         expect(newState.solutions).toEqual(['apple', 'banana', 'cherry']);
       });
 
-      it('records completed tier timing when crossing a tier threshold', () => {
+      it('records tier timing when crossing a tier threshold for the first time', () => {
         const state: GameState = {
           ...initialState,
-          points: 0, // Starts in the 'Parked' threshold
+          points: 0,
           elapsedSeconds: 45,
+          tierTimes: {},
         };
 
         const action = {
           type: 'ADD_SOLUTION' as const,
           guess: 'leapfrog',
           feedback: 'Great!',
-          points: 15, // Crosses into 'Good Start' threshold (15 points / 100 goalPoints = 15%)
+          points: 25,
+          goalPoints: 100,
+        };
+
+        const newState = gameReducer(state, action);
+        const newTierLabel = getTierForPoints(25, 100);
+
+        expect(newState.tierTimes[newTierLabel]).toBe(45);
+      });
+
+      it('does not overwrite existing tier completion time if the tier was previously reached', () => {
+        const initialTierLabel = getTierForPoints(25, 100);
+
+        const state: GameState = {
+          ...initialState,
+          points: 25,
+          elapsedSeconds: 90,
+          tierTimes: { [initialTierLabel]: 45 },
+        };
+
+        const action = {
+          type: 'ADD_SOLUTION' as const,
+          guess: 'limping',
+          feedback: 'Nice!',
+          points: 5,
           goalPoints: 100,
         };
 
         const newState = gameReducer(state, action);
 
-        // Previous tier ('Parked') should capture elapsed seconds at completion
-        expect(newState.tierTimes[TIER_THRESHOLDS[0].label]).toBe(45);
-
-        const newTierLabel = getTierForPoints(newState.points, action.goalPoints);
-        expect(newTierLabel).toBe(TIER_THRESHOLDS[1].label);
+        // Tier timestamp remains fixed at original completion time
+        expect(newState.tierTimes[initialTierLabel]).toBe(45);
       });
     });
 
@@ -202,6 +191,12 @@ describe('gameReducer', () => {
         const newState = gameReducer(initialState, { type: 'START_TIMER' });
         expect(newState.timerRunning).toBe(true);
       });
+
+      it('does not mutate state if timer is already running', () => {
+        const state = { ...initialState, timerRunning: true };
+        const newState = gameReducer(state, { type: 'START_TIMER' });
+        expect(newState).toBe(state);
+      });
     });
 
     describe('PAUSE_TIMER', () => {
@@ -209,6 +204,11 @@ describe('gameReducer', () => {
         const state = { ...initialState, timerRunning: true };
         const newState = gameReducer(state, { type: 'PAUSE_TIMER' });
         expect(newState.timerRunning).toBe(false);
+      });
+
+      it('does not mutate state if timer is already paused', () => {
+        const newState = gameReducer(initialState, { type: 'PAUSE_TIMER' });
+        expect(newState).toBe(initialState);
       });
     });
 
@@ -250,7 +250,7 @@ describe('gameReducer', () => {
           solutions: ['limping'],
           points: 10,
           lastFeedback: { message: 'Success!', type: 'success' },
-          tierTimes: { Parked: 5, 'Good Start': 12 },
+          tierTimes: { Bronze: 12 },
           elapsedSeconds: 12,
           timerRunning: true,
         };
@@ -259,39 +259,51 @@ describe('gameReducer', () => {
       });
     });
 
+    describe('LOAD_PUZZLE', () => {
+      it('replaces the current game state with the provided state payload', () => {
+        const customState: GameState = {
+          ...initialState,
+          points: 50,
+          solutions: ['leapfrog', 'limping'],
+          elapsedSeconds: 120,
+        };
+
+        const newState = gameReducer(initialState, {
+          type: 'LOAD_PUZZLE',
+          payload: customState,
+        });
+
+        expect(newState).toEqual(customState);
+      });
+    });
+
     describe('SET_FEEDBACK_MESSAGE', () => {
-      it('sets the feedback and clears the guess', () => {
+      it('sets feedback and clears the current guess', () => {
         const state: GameState = { ...initialState, guess: 'badword' };
         const newState = gameReducer(state, {
           type: 'SET_FEEDBACK_MESSAGE',
           message: 'Not in our dictionary!',
           feedbackType: 'info',
         });
+
         expect(newState.guess).toBe('');
-        expect(newState.lastFeedback?.message).toBe('Not in our dictionary!');
+        expect(newState.lastFeedback).toEqual({
+          message: 'Not in our dictionary!',
+          type: 'info',
+        });
       });
 
-      it('sets error or info feedback correctly', () => {
+      it('handles error feedback types correctly', () => {
         const state: GameState = { ...initialState, guess: 'badword' };
-
-        const errorState = gameReducer(state, {
+        const newState = gameReducer(state, {
           type: 'SET_FEEDBACK_MESSAGE',
-          message: 'Not in dictionary',
+          message: 'An error occurred while checking your guess.',
           feedbackType: 'error',
         });
-        expect(errorState.lastFeedback).toEqual({
-          message: 'Not in dictionary',
-          type: 'error',
-        });
 
-        const infoState = gameReducer(state, {
-          type: 'SET_FEEDBACK_MESSAGE',
-          message: 'Already found!',
-          feedbackType: 'info',
-        });
-        expect(infoState.lastFeedback).toEqual({
-          message: 'Already found!',
-          type: 'info',
+        expect(newState.lastFeedback).toEqual({
+          message: 'An error occurred while checking your guess.',
+          type: 'error',
         });
       });
     });

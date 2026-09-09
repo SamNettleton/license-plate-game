@@ -1,56 +1,59 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchRandomPlate } from '../api/plateService';
-import Game from '@/components/game/Game';
-import { GameMode } from '@/constants/game';
-import { Box, Fade } from '@components';
-import LoadingDisplay from '@/components/feedback/LoadingDisplay';
-import ErrorDisplay from '@/components/feedback/ErrorDisplay';
+// DEPRECATED: This page is no longer used. The practice mode has been removed from the game.
+// May be used in the future, but for now, it is commented out to avoid confusion.
 
-const PLATE_STORAGE_KEY = 'lp_practice_current_plate';
+// import { useQuery } from '@tanstack/react-query';
+// import { fetchRandomPlate } from '../api/plateService';
+// import Game from '@/components/game/Game';
+// import { GameMode } from '@/constants/game';
+// import { Box, Fade } from '@components';
+// import LoadingDisplay from '@/components/feedback/LoadingDisplay';
+// import ErrorDisplay from '@/components/feedback/ErrorDisplay';
 
-function Practice() {
-  const {
-    data: challenge,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['randomPlate'],
-    queryFn: fetchPlate,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
+// const PLATE_STORAGE_KEY = 'lp_practice_current_plate';
 
-  if (isLoading || isFetching) return <LoadingDisplay message="Crafting a random plate..." />;
-  if (error || !challenge) return <ErrorDisplay error={error} reset={refetch} />;
+// function Practice() {
+//   const {
+//     data: challenge,
+//     isLoading,
+//     isFetching,
+//     error,
+//     refetch,
+//   } = useQuery({
+//     queryKey: ['randomPlate'],
+//     queryFn: fetchPlate,
+//     staleTime: Infinity,
+//     gcTime: Infinity,
+//     refetchOnWindowFocus: false,
+//     refetchOnReconnect: false,
+//   });
 
-  return (
-    <Fade in={true} timeout={1000}>
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Game
-          key={challenge.sequence}
-          plate={challenge.sequence}
-          solutionsCount={challenge.solutionsCount}
-          goalPoints={challenge.goalPoints}
-          mode={GameMode.PRACTICE}
-        />
-      </Box>
-    </Fade>
-  );
-}
+//   if (isLoading || isFetching) return <LoadingDisplay message="Crafting a random plate..." />;
+//   if (error || !challenge) return <ErrorDisplay error={error} reset={refetch} />;
 
-const fetchPlate = async () => {
-  const saved = localStorage.getItem(PLATE_STORAGE_KEY);
-  if (saved) {
-    return JSON.parse(saved);
-  }
+//   return (
+//     <Fade in={true} timeout={1000}>
+//       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+//         <Game
+//           key={challenge.sequence}
+//           plate={challenge.sequence}
+//           solutionsCount={challenge.solutionsCount}
+//           goalPoints={challenge.goalPoints}
+//           mode={GameMode.PRACTICE}
+//         />
+//       </Box>
+//     </Fade>
+//   );
+// }
 
-  const newPlate = await fetchRandomPlate();
-  localStorage.setItem(PLATE_STORAGE_KEY, JSON.stringify(newPlate));
-  return newPlate;
-};
+// const fetchPlate = async () => {
+//   const saved = localStorage.getItem(PLATE_STORAGE_KEY);
+//   if (saved) {
+//     return JSON.parse(saved);
+//   }
 
-export default Practice;
+//   const newPlate = await fetchRandomPlate();
+//   localStorage.setItem(PLATE_STORAGE_KEY, JSON.stringify(newPlate));
+//   return newPlate;
+// };
+
+// export default Practice;

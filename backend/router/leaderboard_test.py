@@ -31,9 +31,9 @@ async def test_get_daily_leaderboard_single_source(client, db):
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
-            VALUES (:user_1, :target_date, :points_1, :words_1),
-                   (:user_2, :target_date, :points_2, :words_2)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
+            VALUES (:user_1, :target_date, :points_1, :words_1, :elapsed_1, '{}'::jsonb),
+                   (:user_2, :target_date, :points_2, :words_2, :elapsed_2, '{}'::jsonb)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
@@ -45,6 +45,8 @@ async def test_get_daily_leaderboard_single_source(client, db):
             "points_2": 1500,
             "words_1": ["alpha", "beta"],
             "words_2": ["gamma", "delta", "epsilon"],
+            "elapsed_1": 30,
+            "elapsed_2": 45,
         },
     )
     await db.flush()
@@ -88,12 +90,18 @@ async def test_get_daily_leaderboard_includes_user_rank_row_when_outside_top_ten
         await db.execute(
             text(
                 """
-                INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
-                VALUES (:user_id, :target_date, :points, :words)
+                INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
+                VALUES (:user_id, :target_date, :points, :words, :elapsed, '{}'::jsonb)
                 ON CONFLICT (user_id, date) DO NOTHING
                 """
             ),
-            {"user_id": user_id, "target_date": target_date, "points": 1000 + index, "words": [f"word-{index}"]},
+            {
+                "user_id": user_id,
+                "target_date": target_date,
+                "points": 1000 + index,
+                "words": [f"word-{index}"],
+                "elapsed": 60,
+            },
         )
 
     await db.execute(
@@ -105,12 +113,18 @@ async def test_get_daily_leaderboard_includes_user_rank_row_when_outside_top_ten
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found)
-            VALUES (:user_id, :target_date, :points, :words)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
+            VALUES (:user_id, :target_date, :points, :words, :elapsed, '{}'::jsonb)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
-        {"user_id": "outside-user", "target_date": target_date, "points": 500, "words": ["small"]},
+        {
+            "user_id": "outside-user",
+            "target_date": target_date,
+            "points": 500,
+            "words": ["small"],
+            "elapsed": 120,
+        },
     )
     await db.flush()
 
