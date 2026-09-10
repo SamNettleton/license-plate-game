@@ -8,9 +8,9 @@ import ResultsModal from '@/components/modals/ResultsModal';
 import { Box, Grid } from '@components';
 import { gameReducer, createInitialState } from './gameReducer';
 import { GameMode } from '@/constants/game';
-import { useQueryClient } from '@tanstack/react-query';
 import { faro } from '@/faro';
 import { useSettings } from '@/context/SettingsContext';
+import { useGameTimer, useCacheSync, useModalHistory } from '@/hooks/useGameHooks';
 
 type Props = {
   plate: string;
@@ -21,8 +21,8 @@ type Props = {
   elapsedSeconds: number;
   tierTimes: Record<string, number>;
   mode: GameMode;
-  puzzleDate?: string; // Optional, only for daily mode
-  userId?: string; // Optional, only for daily mode
+  puzzleDate?: string;
+  userId?: string;
 };
 
 function Game({
@@ -36,79 +36,59 @@ function Game({
   puzzleDate,
   userId,
 }: Props) {
-  const queryClient = useQueryClient();
   const [state, dispatch] = React.useReducer(
     gameReducer,
     { wordsFound, pointsEarned, elapsedSeconds, tierTimes },
     createInitialState,
   );
 
-  // Re-initialize state when loading a different daily puzzle or new plate
-  React.useEffect(() => {
-    const freshState = createInitialState({
-      wordsFound,
-      pointsEarned,
-      elapsedSeconds,
-      tierTimes,
-    });
-    dispatch({ type: 'LOAD_PUZZLE', payload: freshState });
-  }, [plate, puzzleDate, wordsFound, pointsEarned, elapsedSeconds, tierTimes]);
-
   const [showAlert, setShowAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isMobileResultsOpen, setIsMobileResultsOpen] = React.useState(false);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [visibility, setVisibility] = React.useState(() =>
-    typeof document !== 'undefined' ? document.visibilityState : 'visible',
-  );
 
   const { settings } = useSettings();
   const showInGameTimer = settings.displayTimeOption === 'gameAndResults';
   const showInResultsTimer = settings.displayTimeOption !== 'nowhere';
 
   React.useEffect(() => {
-    queryClient.setQueryData(['active-game-tier-times'], {
-      elapsedSeconds: state.elapsedSeconds,
-      goalPoints,
-      plate,
-      points: state.points,
-      tierTimes: state.tierTimes,
-    });
-  }, [state.tierTimes, state.points, state.elapsedSeconds, goalPoints, plate, queryClient]);
+    // If server has more words than local state (e.g., added from Device 2)
+    if (wordsFound.length > state.solutions.length) {
+      const freshState = createInitialState({
+        wordsFound,
+        pointsEarned,
+        // Preserve local timer if client is further ahead than server
+        elapsedSeconds: Math.max(state.elapsedSeconds, elapsedSeconds),
+        tierTimes,
+      });
 
-  React.useEffect(() => {
-    return () => {
-      queryClient.removeQueries({ queryKey: ['active-game-tier-times'] });
-    };
-  }, [queryClient]);
-
-  React.useEffect(() => {
-    const handleVisibility = () => setVisibility(document.visibilityState);
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
-
-  // Pause game timer when modal is active or browser tab loses focus
-  React.useEffect(() => {
-    const isPaused = isModalOpen || visibility === 'hidden';
-
-    if (isPaused) {
-      dispatch({ type: 'PAUSE_TIMER' });
-      return;
+      dispatch({ type: 'LOAD_PUZZLE', payload: freshState });
     }
+  }, [
+    wordsFound,
+    pointsEarned,
+    elapsedSeconds,
+    tierTimes,
+    state.solutions.length,
+    state.elapsedSeconds,
+  ]);
 
-    dispatch({ type: 'START_TIMER' });
+  // Custom Hooks
+  useGameTimer(isModalOpen, dispatch);
+  useModalHistory(isModalOpen, () => setIsModalOpen(false));
+  useCacheSync({
+    elapsedSeconds: state.elapsedSeconds,
+    goalPoints,
+    plate,
+    points: state.points,
+    tierTimes: state.tierTimes,
+    solutions: state.solutions,
+    mode,
+    puzzleDate,
+    userId,
+  });
 
-    const tickInterval = setInterval(() => {
-      dispatch({ type: 'TICK_TIMER' });
-    }, 1000);
-
-    return () => {
-      clearInterval(tickInterval);
-      dispatch({ type: 'PAUSE_TIMER' });
-    };
-  }, [isModalOpen, visibility]);
-
+  // Sync tier times to backend
   React.useEffect(() => {
     const isDaily = mode === GameMode.DAILY;
     const hasTiers = Object.keys(state.tierTimes).length > 0;
@@ -122,12 +102,11 @@ function Game({
     });
   }, [state.tierTimes, userId, puzzleDate, mode]);
 
+  // Feedback alert auto-hide
   React.useEffect(() => {
     if (!state.lastFeedback) return;
     setShowAlert(true);
-    const timer = setTimeout(() => {
-      setShowAlert(false);
-    }, 2000);
+    const timer = setTimeout(() => setShowAlert(false), 2000);
     return () => clearTimeout(timer);
   }, [state.lastFeedback]);
 
@@ -190,25 +169,6 @@ function Game({
       setIsSubmitting(false);
     }
   };
-
-  React.useEffect(() => {
-    if (!isModalOpen) return;
-
-    window.history.pushState({ modalOpen: true }, '');
-
-    const handlePopState = () => {
-      setIsModalOpen(false);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      if (window.history.state?.modalOpen) {
-        window.history.back();
-      }
-    };
-  }, [isModalOpen]);
 
   return (
     <Grid container spacing={2} sx={{ height: '100%' }}>

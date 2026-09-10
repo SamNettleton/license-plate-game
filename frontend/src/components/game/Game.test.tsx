@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import Game from './Game';
@@ -26,6 +27,16 @@ vi.mock('@/faro', () => ({
       pushLog: vi.fn(),
     },
   },
+}));
+
+vi.mock('@/hooks/useGameHooks', () => ({
+  useGameTimer: vi.fn((_isModalOpen: boolean, dispatch: (action: any) => void) => {
+    React.useEffect(() => {
+      dispatch({ type: 'START_TIMER' });
+    }, [dispatch]);
+  }),
+  useCacheSync: vi.fn(),
+  useModalHistory: vi.fn(),
 }));
 
 const defaultGameProps = {

@@ -22,8 +22,8 @@ function Daily() {
   } = useQuery({
     queryKey: ['dailyPlate', today, playerId],
     queryFn: () => fetchDailyPlate(playerId, today),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     enabled: !!playerId,
   });
