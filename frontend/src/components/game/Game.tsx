@@ -73,9 +73,13 @@ function Game({
     state.elapsedSeconds,
   ]);
 
+  const handleCloseModal = React.useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
   // Custom Hooks
   useGameTimer(isModalOpen, dispatch);
-  useModalHistory(isModalOpen, () => setIsModalOpen(false));
+  useModalHistory(isModalOpen, handleCloseModal);
   useCacheSync({
     elapsedSeconds: state.elapsedSeconds,
     goalPoints,
@@ -225,7 +229,7 @@ function Game({
         showShareButton={mode === GameMode.DAILY}
         tierTimes={state.tierTimes}
         displayTimes={showInResultsTimer}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
       />
     </Grid>
   );

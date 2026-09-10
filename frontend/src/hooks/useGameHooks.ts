@@ -104,22 +104,32 @@ export function useCacheSync({
 
 // Modal History Navigation
 export function useModalHistory(isOpen: boolean, onClose: () => void) {
+  const onCloseRef = React.useRef(onClose);
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   React.useEffect(() => {
     if (!isOpen) return;
 
     window.history.pushState({ modalOpen: true }, '');
 
+    let isPoppedBySystem = false;
+
     const handlePopState = () => {
-      onClose();
+      isPoppedBySystem = true;
+      onCloseRef.current();
     };
 
     window.addEventListener('popstate', handlePopState);
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      if (window.history.state?.modalOpen) {
+
+      // If closed programmatically (not by hardware back button), step back history
+      if (!isPoppedBySystem && window.history.state?.modalOpen) {
         window.history.back();
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 }
