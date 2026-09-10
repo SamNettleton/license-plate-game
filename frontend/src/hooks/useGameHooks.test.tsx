@@ -148,6 +148,12 @@ describe('useGameHooks', () => {
 
     beforeEach(() => {
       vi.clearAllMocks();
+      // Ensure window.history.state is clear before each test
+      Object.defineProperty(window.history, 'state', {
+        configurable: true,
+        writable: true,
+        value: null,
+      });
     });
 
     it('pushes history state when modal opens', () => {
@@ -156,6 +162,14 @@ describe('useGameHooks', () => {
       renderHook(() => useModalHistory(true, onClose));
 
       expect(pushStateSpy).toHaveBeenCalledWith({ modalOpen: true }, '');
+    });
+
+    it('does not push history state when modal is closed', () => {
+      const pushStateSpy = vi.spyOn(window.history, 'pushState');
+
+      renderHook(() => useModalHistory(false, onClose));
+
+      expect(pushStateSpy).not.toHaveBeenCalled();
     });
 
     it('triggers onClose when browser popstate fires', () => {
@@ -168,12 +182,13 @@ describe('useGameHooks', () => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
-    it('calls history.back on unmount if modal history state is present', () => {
+    it('calls history.back on unmount if closed programmatically', () => {
       const backSpy = vi.spyOn(window.history, 'back').mockImplementation(() => {});
 
       // Simulate history state set by pushState
       Object.defineProperty(window.history, 'state', {
         configurable: true,
+        writable: true,
         value: { modalOpen: true },
       });
 
@@ -181,6 +196,46 @@ describe('useGameHooks', () => {
       unmount();
 
       expect(backSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT call history.back on unmount if closed via system back button (popstate)', () => {
+      const backSpy = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+
+      Object.defineProperty(window.history, 'state', {
+        configurable: true,
+        writable: true,
+        value: { modalOpen: true },
+      });
+
+      const { unmount } = renderHook(() => useModalHistory(true, onClose));
+
+      // Simulate system popstate (back button / swipe gesture)
+      act(() => {
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+
+      unmount();
+
+      // Should NOT step back again because browser already popped history
+      expect(backSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not re-push history state when onClose function reference changes', () => {
+      const pushStateSpy = vi.spyOn(window.history, 'pushState');
+
+      let onCloseHandler = () => {};
+      const { rerender } = renderHook(({ cb }) => useModalHistory(true, cb), {
+        initialProps: { cb: onCloseHandler },
+      });
+
+      expect(pushStateSpy).toHaveBeenCalledTimes(1);
+
+      // Change callback reference on parent re-render
+      onCloseHandler = () => {};
+      rerender({ cb: onCloseHandler });
+
+      // Effect should not run again
+      expect(pushStateSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
