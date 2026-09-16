@@ -28,23 +28,31 @@ async def get_daily_stats(
                 status_code=400, detail="Date must be in YYYY-MM-DD format."
             ) from exc
 
-    # Unnest words for global word length metrics across all users for the given date
+    # Condition for global stats: must be on the target date and have active live play
+    active_live_condition = (
+        DailyUserSummary.date == parsed_date
+    ) & (
+        (DailyUserSummary.points_earned > 0) |
+        (func.cardinality(DailyUserSummary.words_found) > 0)
+    )
+
+    # Unnest live words for global word length metrics across active live users only
     words_cte = (
         select(
             DailyUserSummary.user_id,
             DailyUserSummary.points_earned,
             func.unnest(DailyUserSummary.words_found).label("word"),
         )
-        .where(DailyUserSummary.date == parsed_date)
+        .where(active_live_condition)
         .cte("daily_words")
     )
 
     cte_word_len = func.length(words_cte.c.word)
 
-    # Subqueries for average points and word counts per player
+    # Subqueries for average points and word counts per active live player
     global_user_avg_points = (
         select(func.coalesce(func.avg(DailyUserSummary.points_earned), 0))
-        .where(DailyUserSummary.date == parsed_date)
+        .where(active_live_condition)
         .scalar_subquery()
     )
 
@@ -54,7 +62,7 @@ async def get_daily_stats(
                 func.avg(func.cardinality(DailyUserSummary.words_found)), 0
             )
         )
-        .where(DailyUserSummary.date == parsed_date)
+        .where(active_live_condition)
         .scalar_subquery()
     )
 
@@ -68,7 +76,7 @@ async def get_daily_stats(
 
     global_stats_row = (await db.execute(global_query)).mappings().one_or_none()
 
-    # Compute individual user stats in Python from their single summary row
+    # Compute individual user stats combining both live and archive metrics for personal view
     user_specific_row = None
     if user_id:
         user_summary = (
@@ -80,15 +88,21 @@ async def get_daily_stats(
             )
         ).scalar_one_or_none()
 
-        if user_summary and user_summary.words_found:
-            word_lengths = [len(w) for w in user_summary.words_found]
-            user_specific_row = {
-                "avg_word_length": sum(word_lengths) / len(word_lengths),
-                "min_word_length": min(word_lengths),
-                "max_word_length": max(word_lengths),
-                "total_points": user_summary.points_earned,
-                "words_found_count": len(user_summary.words_found),
-            }
+        if user_summary:
+            combined_words = list(
+                dict.fromkeys(user_summary.words_found + user_summary.archive_words_found)
+            )
+            total_points = user_summary.points_earned + user_summary.archive_points_earned
+
+            if combined_words or total_points > 0:
+                word_lengths = [len(w) for w in combined_words] if combined_words else [0]
+                user_specific_row = {
+                    "avg_word_length": sum(word_lengths) / len(word_lengths) if combined_words else 0.0,
+                    "min_word_length": min(word_lengths) if combined_words else 0,
+                    "max_word_length": max(word_lengths) if combined_words else 0,
+                    "total_points": total_points,
+                    "words_found_count": len(combined_words),
+                }
 
     def format_stats_payload(row):
         if not row or row["words_found_count"] is None or float(row["words_found_count"]) == 0:

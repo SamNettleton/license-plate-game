@@ -88,7 +88,12 @@ export const Calendar: React.FC<CalendarProps> = ({
 
   return (
     <Box sx={containerStyles}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={headerStackStyles}
+      >
         <IconButton
           size="small"
           onClick={() => moveByMonth(-1)}
@@ -124,7 +129,7 @@ export const Calendar: React.FC<CalendarProps> = ({
             const hasPlayed = Boolean(status?.emoji);
 
             return (
-              <Box key={formattedKey} sx={{ position: 'relative', width: '100%' }}>
+              <Box key={formattedKey} sx={cellWrapperStyles}>
                 <Button
                   size="small"
                   disabled={isDisabled}
@@ -140,28 +145,19 @@ export const Calendar: React.FC<CalendarProps> = ({
                   <Typography
                     component="span"
                     variant="body2"
-                    sx={{
-                      fontWeight: isToday || isSelected ? 700 : 400,
-                      lineHeight: 1,
-                      transform:
-                        inMonth && !isDisabled && status?.emoji ? 'translateY(-3px)' : 'none',
-                      transition: 'transform 0.15s ease',
-                    }}
+                    sx={getDayNumberStyles(
+                      isToday,
+                      isSelected,
+                      inMonth,
+                      isDisabled,
+                      Boolean(status?.emoji),
+                    )}
                   >
                     {date.getDate()}
                   </Typography>
 
                   {inMonth && !isDisabled && status?.emoji && (
-                    <Box
-                      component="span"
-                      sx={{
-                        position: 'absolute',
-                        bottom: 3,
-                        fontSize: '0.625rem',
-                        lineHeight: 1,
-                        pointerEvents: 'none',
-                      }}
-                    >
+                    <Box component="span" sx={emojiBoxStyles}>
                       {status.emoji}
                     </Box>
                   )}
@@ -179,6 +175,10 @@ const containerStyles: SxProps<Theme> = {
   width: '100%',
 };
 
+const headerStackStyles: SxProps<Theme> = {
+  mb: 2,
+};
+
 const weekdayGridStyles: SxProps<Theme> = {
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
@@ -191,6 +191,32 @@ const daysGridStyles: SxProps<Theme> = {
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
   gap: 0.5,
+};
+
+const cellWrapperStyles: SxProps<Theme> = {
+  position: 'relative',
+  width: '100%',
+};
+
+const getDayNumberStyles = (
+  isToday: boolean,
+  isSelected: boolean,
+  inMonth: boolean,
+  isDisabled: boolean,
+  hasEmoji: boolean,
+): SxProps<Theme> => ({
+  fontWeight: isToday || isSelected ? 700 : 400,
+  lineHeight: 1,
+  transform: inMonth && !isDisabled && hasEmoji ? 'translateY(-3px)' : 'none',
+  transition: 'transform 0.15s ease',
+});
+
+const emojiBoxStyles: SxProps<Theme> = {
+  position: 'absolute',
+  bottom: 3,
+  fontSize: '0.625rem',
+  lineHeight: 1,
+  pointerEvents: 'none',
 };
 
 interface DayStyleParams {

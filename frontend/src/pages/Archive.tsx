@@ -65,7 +65,6 @@ function Archive() {
       const milestone = getMilestone(percent);
 
       return {
-        isCompleted: true,
         emoji: milestone.emoji,
       };
     },

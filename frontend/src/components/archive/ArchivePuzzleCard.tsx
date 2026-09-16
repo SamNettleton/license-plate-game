@@ -50,7 +50,7 @@ export default function ArchivePuzzleCard({
         )}
       </Box>
 
-      {/* Content row: Mini plate and prioritized score display */}
+      {/* Content row: Mini plate and score display */}
       <Box sx={contentRowStyles}>
         <Box sx={miniPlateStyles}>{sequence}</Box>
 

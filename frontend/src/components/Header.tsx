@@ -53,7 +53,6 @@ export default function Header() {
   const handleBackClick = () => {
     const origin = (location.state as { origin?: string } | null)?.origin;
 
-    // 1. If returning from Leaderboard or Stats, navigate back to original page (preserving date param)
     if ((isLeaderboardPage || isStatsPage) && origin) {
       navigate({
         pathname: origin,
@@ -62,13 +61,11 @@ export default function Header() {
       return;
     }
 
-    // 2. If on a daily archive puzzle (/daily/?date=...), go back to archive
     if ((isDailyPage && hasDateParam) || origin === '/archive') {
       navigate('/archive');
       return;
     }
 
-    // 3. Fallback routing
     if (origin) {
       navigate({
         pathname: origin,

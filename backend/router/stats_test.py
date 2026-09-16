@@ -272,6 +272,114 @@ async def test_get_daily_stats_empty_day_returns_zeroed_payload(client):
     assert payload["global_stats"] == zero_stats
     assert payload["user_stats"] == zero_stats
 
+@pytest.mark.asyncio
+async def test_get_daily_stats_archive_included_in_user_stats_excluded_from_global(client, db):
+    target_date = date(2026, 8, 12)
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES ('archive-test-user', 'ArchiveUser')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    )
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES ('archive-test-user', :target_date, 0, ARRAY[]::varchar[], 0, '{}'::jsonb, :archive_words, :archive_points)
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {
+            "target_date": target_date,
+            "archive_words": ["archiveword"],
+            "archive_points": 25,
+        },
+    )
+    await db.flush()
+
+    with patch("router.stats.datetime") as mock_datetime:
+        mock_datetime.now.return_value.date.return_value = TEST_TODAY
+        mock_datetime.strptime = datetime.strptime
+
+        response = await client.get(
+            "/api/stats/daily",
+            params={"date": target_date.isoformat(), "user_id": "archive-test-user"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    zero_stats = {
+        "avg_word_length": 0.0,
+        "min_word_length": 0,
+        "max_word_length": 0,
+        "total_points": 0,
+        "words_found_count": 0,
+    }
+    assert payload["global_stats"] == zero_stats
+
+    user_stats = payload["user_stats"]
+    assert user_stats is not None
+    assert user_stats["words_found_count"] == 1.0
+    assert user_stats["total_points"] == 25.0
+    assert user_stats["avg_word_length"] == 11.0
+
+
+@pytest.mark.asyncio
+async def test_get_daily_stats_zero_live_activity_ignored_in_global_averages(client, db):
+    target_date = date(2026, 8, 13)
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES
+                ('active-user', 'Active'),
+                ('inactive-live-user', 'Inactive')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    )
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES ('active-user', :target_date, 100, ARRAY['python']::varchar[], 50, '{}'::jsonb, ARRAY[]::varchar[], 0),
+                   ('inactive-live-user', :target_date, 0, ARRAY[]::varchar[], 0, '{}'::jsonb, ARRAY['archived']::varchar[], 50)
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {"target_date": target_date},
+    )
+    await db.flush()
+
+    with patch("router.stats.datetime") as mock_datetime:
+        mock_datetime.now.return_value.date.return_value = TEST_TODAY
+        mock_datetime.strptime = datetime.strptime
+
+        response = await client.get(
+            "/api/stats/daily",
+            params={"date": target_date.isoformat(), "user_id": "inactive-live-user"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    global_stats = payload["global_stats"]
+    assert global_stats["total_points"] == 100.0
+    assert global_stats["words_found_count"] == 1.0
+    assert global_stats["avg_word_length"] == 6.0
+
+    user_stats = payload["user_stats"]
+    assert user_stats is not None
+    assert user_stats["total_points"] == 50.0
+    assert user_stats["words_found_count"] == 1.0
+    assert user_stats["avg_word_length"] == 8.0
+
 
 @pytest.mark.asyncio
 async def test_get_daily_stats_invalid_date_format(client):
