@@ -7,7 +7,7 @@ from random import Random
 from schemas.plate import PlateChallenge
 from logic import game
 from database import get_db
-from db.models import DailyUserSummary
+from db.models import DailyUserSummary, DailyPlate
 import hashlib
 
 router = APIRouter(prefix="/plate", tags=["plate"])
@@ -23,9 +23,30 @@ async def get_daily_plate(
 
     parsed_date = datetime.strptime(date, "%Y-%m-%d").date()
 
-    seed_value = int(hashlib.sha256(date.encode()).hexdigest(), 16) % (10**8)
-    local_rng = Random(seed_value)
-    letters, count, goal_points = game.generate_valid_plate(rng=local_rng)
+    # Fetch the pre-generated plate from the database table
+    stmt_plate = select(DailyPlate).where(DailyPlate.date == parsed_date)
+    result_plate = await db.execute(stmt_plate)
+    daily_plate = result_plate.scalars().first()
+
+    # Safety fallback: generate and save on the fly if the date isn't seeded yet
+    if not daily_plate:
+        seed_value = int(hashlib.sha256(date.encode()).hexdigest(), 16) % (10**8)
+        local_rng = Random(seed_value)
+        letters, count, goal_points = game.generate_valid_plate(rng=local_rng)
+
+        daily_plate = DailyPlate(
+            date=parsed_date,
+            sequence=letters,
+            total_count=count,
+            goal_points=goal_points
+        )
+        db.add(daily_plate)
+        await db.commit()
+        await db.refresh(daily_plate)
+
+    letters = daily_plate.sequence
+    count = daily_plate.total_count
+    goal_points = daily_plate.goal_points
 
     words_found = []
     points_earned = 0

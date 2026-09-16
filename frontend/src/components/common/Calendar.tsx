@@ -4,11 +4,17 @@ import type { SxProps, Theme } from '@/material-ui';
 import { ArrowBackIcon, ArrowForwardIcon } from '@/icons';
 import { formatDateKey, addDays, startOfMonth, daysInMonth } from '@/utils/date';
 
+export interface DayStatus {
+  emoji?: string;
+}
+
 export interface CalendarProps {
   selectedDate: Date;
   minDate: Date;
   maxDate: Date;
   onSelectDate: (date: Date) => void;
+  onMonthChange?: (newViewDate: Date) => void;
+  getDayStatus?: (dateKey: string) => DayStatus | undefined;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -16,6 +22,8 @@ export const Calendar: React.FC<CalendarProps> = ({
   minDate,
   maxDate,
   onSelectDate,
+  onMonthChange,
+  getDayStatus,
 }) => {
   const [viewDate, setViewDate] = React.useState<Date>(selectedDate);
 
@@ -39,10 +47,12 @@ export const Calendar: React.FC<CalendarProps> = ({
     const totalCells = Math.ceil((daysInMonth(viewDate) + firstWeekday) / 7) * 7;
     const cells: Array<{
       date: Date;
+      formattedKey: string;
       inMonth: boolean;
       isSelected: boolean;
       isToday: boolean;
       isDisabled: boolean;
+      status?: DayStatus;
     }> = [];
 
     for (let index = 0; index < totalCells; index += 1) {
@@ -52,15 +62,28 @@ export const Calendar: React.FC<CalendarProps> = ({
       const isSelected = formattedKey === formatDateKey(selectedDate);
       const isToday = formattedKey === todayKey;
       const isDisabled = currentDate < minDate || currentDate > maxDate;
+      const status = getDayStatus?.(formattedKey);
 
-      cells.push({ date: currentDate, inMonth, isSelected, isToday, isDisabled });
+      cells.push({
+        date: currentDate,
+        formattedKey,
+        inMonth,
+        isSelected,
+        isToday,
+        isDisabled,
+        status,
+      });
     }
 
     return cells;
-  }, [viewDate, selectedDate, minDate, maxDate, todayKey]);
+  }, [viewDate, selectedDate, minDate, maxDate, todayKey, getDayStatus]);
 
   const moveByMonth = (amount: number) => {
-    setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
+    setViewDate((prev) => {
+      const nextDate = new Date(prev.getFullYear(), prev.getMonth() + amount, 1);
+      onMonthChange?.(nextDate);
+      return nextDate;
+    });
   };
 
   return (
@@ -96,17 +119,57 @@ export const Calendar: React.FC<CalendarProps> = ({
       </Box>
 
       <Box sx={daysGridStyles}>
-        {calendarDays.map(({ date, inMonth, isSelected, isToday, isDisabled }) => (
-          <Button
-            key={formatDateKey(date)}
-            size="small"
-            disabled={isDisabled}
-            onClick={() => onSelectDate(date)}
-            sx={getDayButtonStyles({ isSelected, isToday, inMonth, isDisabled })}
-          >
-            {date.getDate()}
-          </Button>
-        ))}
+        {calendarDays.map(
+          ({ date, formattedKey, inMonth, isSelected, isToday, isDisabled, status }) => {
+            const hasPlayed = Boolean(status?.emoji);
+
+            return (
+              <Box key={formattedKey} sx={{ position: 'relative', width: '100%' }}>
+                <Button
+                  size="small"
+                  disabled={isDisabled}
+                  onClick={() => onSelectDate(date)}
+                  sx={getDayButtonStyles({
+                    isSelected,
+                    isToday,
+                    inMonth,
+                    isDisabled,
+                    hasPlayed,
+                  })}
+                >
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    sx={{
+                      fontWeight: isToday || isSelected ? 700 : 400,
+                      lineHeight: 1,
+                      transform:
+                        inMonth && !isDisabled && status?.emoji ? 'translateY(-3px)' : 'none',
+                      transition: 'transform 0.15s ease',
+                    }}
+                  >
+                    {date.getDate()}
+                  </Typography>
+
+                  {inMonth && !isDisabled && status?.emoji && (
+                    <Box
+                      component="span"
+                      sx={{
+                        position: 'absolute',
+                        bottom: 3,
+                        fontSize: '0.625rem',
+                        lineHeight: 1,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {status.emoji}
+                    </Box>
+                  )}
+                </Button>
+              </Box>
+            );
+          },
+        )}
       </Box>
     </Box>
   );
@@ -135,6 +198,7 @@ interface DayStyleParams {
   isToday: boolean;
   inMonth: boolean;
   isDisabled: boolean;
+  hasPlayed?: boolean;
 }
 
 const getDayButtonStyles = ({
@@ -142,6 +206,7 @@ const getDayButtonStyles = ({
   isToday,
   inMonth,
   isDisabled,
+  hasPlayed,
 }: DayStyleParams): SxProps<Theme> => {
   let color = 'text.primary';
   if (isSelected) {
@@ -160,15 +225,26 @@ const getDayButtonStyles = ({
   }
 
   return {
+    width: '100%',
     minWidth: 0,
-    p: 0,
+    minHeight: 0,
+    height: 'auto',
     aspectRatio: '1 / 1',
+    p: 0,
     borderRadius: '50%',
-    fontWeight: isToday || isSelected ? 700 : 400,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
     color,
     outline,
     outlineOffset,
-    bgcolor: isSelected ? 'primary.main' : 'transparent',
+    bgcolor: isSelected
+      ? 'primary.main'
+      : hasPlayed && inMonth && !isDisabled
+        ? 'action.selected'
+        : 'transparent',
     '&:hover': {
       bgcolor: isSelected ? 'primary.dark' : 'action.hover',
     },

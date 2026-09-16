@@ -2,6 +2,14 @@ from database import Base
 from sqlalchemy import Column, ForeignKey, Index, String, Integer, DateTime, Date, PrimaryKeyConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
+class DailyPlate(Base):
+    __tablename__ = "daily_plates"
+
+    date = Column(Date, primary_key=True, index=True)
+    sequence = Column(String(3), nullable=False)
+    total_count = Column(Integer, nullable=False)
+    goal_points = Column(Integer, nullable=False)
+
 class Dictionary(Base):
     __tablename__ = "dictionary"
 
@@ -37,10 +45,16 @@ class DailyUserSummary(Base):
 
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     date = Column(Date, nullable=False)
+    
+    # Live play metrics (used for daily leaderboards)
     points_earned = Column(Integer, nullable=False, default=0)
     words_found = Column(ARRAY(String), nullable=False, default=list)
     elapsed_seconds = Column(Integer, nullable=False, default=0)
     tier_times = Column(JSONB, nullable=False, default=dict)
+
+    # Archive / Late play tracking
+    archive_words_found = Column(ARRAY(String), nullable=False, default=list)
+    archive_points_earned = Column(Integer, nullable=False, default=0)
 
     __table_args__ = (
         PrimaryKeyConstraint("user_id", "date"),

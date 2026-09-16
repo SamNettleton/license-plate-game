@@ -55,6 +55,15 @@ describe('Home Page', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith('/daily');
     });
+
+    it('navigates to /archive when Archive button is clicked', () => {
+      renderComponent();
+
+      const archiveButton = screen.getByRole('button', { name: /archive/i });
+      fireEvent.click(archiveButton);
+
+      expect(mockNavigate).toHaveBeenCalledWith('/archive');
+    });
   });
 
   describe('First-Time User Experience', () => {
