@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from database import get_db
 import time
@@ -7,7 +7,7 @@ import time
 router = APIRouter(prefix="/system", tags=["system"])
 
 @router.get("/health")
-async def health_check(db: Session = Depends(get_db)):
+async def health_check(db: AsyncSession = Depends(get_db)):
     try:
         start_time = time.time()
         await db.execute(text("SELECT 1"))

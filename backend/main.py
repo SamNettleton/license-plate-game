@@ -4,6 +4,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.metrics import GUESSES_COUNTER, DB_QUERY_TIME # Ensure these are initialized
 from dotenv import load_dotenv
 
+from router import archive
 from router import plate
 from router import users
 from router import words
@@ -29,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(archive.router, prefix="/api")
 app.include_router(plate.router, prefix="/api")
 app.include_router(system.router, prefix="/api")
 app.include_router(users.router, prefix="/api")

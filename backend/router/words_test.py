@@ -106,11 +106,13 @@ def test_check_word_validation_error(sync_client):
 @pytest.mark.asyncio
 async def test_word_check_daily_updates_daily_user_summary(client, db, monkeypatch):
     import services.dictionary as dictionary
+    import router.words as words_router
 
     async def mock_validate_word(session, word):
         return True
 
     monkeypatch.setattr(dictionary, 'validate_word', mock_validate_word)
+    monkeypatch.setattr(words_router, 'is_date_currently_valid_somewhere', lambda d: True)
 
     user_id = 'user-1234'
     puzzle_date = '2026-08-11'
@@ -159,11 +161,13 @@ async def test_word_check_daily_updates_daily_user_summary(client, db, monkeypat
 @pytest.mark.asyncio
 async def test_word_check_daily_rejects_already_found_word(client, db, monkeypatch):
     import services.dictionary as dictionary
+    import router.words as words_router
 
     async def mock_validate_word(session, word):
         return True
 
     monkeypatch.setattr(dictionary, 'validate_word', mock_validate_word)
+    monkeypatch.setattr(words_router, 'is_date_currently_valid_somewhere', lambda d: True)
 
     user_id = 'user-1234'
     puzzle_date = '2026-08-11'

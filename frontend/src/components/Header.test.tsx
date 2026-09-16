@@ -92,7 +92,42 @@ describe('Header Component', () => {
     it('navigates to origin in location state when back button is clicked', () => {
       renderHeader([{ pathname: '/leaderboard', state: { origin: '/daily' } }]);
       fireEvent.click(screen.getByLabelText('back'));
-      expect(mockNavigate).toHaveBeenCalledWith('/daily');
+      expect(mockNavigate).toHaveBeenCalledWith({
+        pathname: '/daily',
+        search: '',
+      });
+    });
+
+    it('preserves search params when returning from leaderboard or stats to origin page', () => {
+      renderHeader([
+        {
+          pathname: '/leaderboard',
+          search: '?date=2026-08-21',
+          state: { origin: '/daily' },
+        },
+      ]);
+      fireEvent.click(screen.getByLabelText('back'));
+      expect(mockNavigate).toHaveBeenCalledWith({
+        pathname: '/daily',
+        search: '?date=2026-08-21',
+      });
+    });
+
+    it('navigates to /archive when back button is clicked on a daily archive puzzle', () => {
+      renderHeader(['/daily?date=2026-08-21']);
+      fireEvent.click(screen.getByLabelText('back'));
+      expect(mockNavigate).toHaveBeenCalledWith('/archive');
+    });
+
+    it('navigates to /archive when origin is explicitly /archive', () => {
+      renderHeader([
+        {
+          pathname: '/leaderboard',
+          state: { origin: '/archive' },
+        },
+      ]);
+      fireEvent.click(screen.getByLabelText('back'));
+      expect(mockNavigate).toHaveBeenCalledWith({ pathname: '/archive', search: '' });
     });
   });
 

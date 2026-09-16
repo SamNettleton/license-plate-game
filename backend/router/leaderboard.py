@@ -50,7 +50,10 @@ async def get_daily_leaderboard(
             .label("overall_rank"),
         )
         .join(User, User.id == DailyUserSummary.user_id)
-        .where(DailyUserSummary.date == parsed_date)
+        .where(
+            DailyUserSummary.date == parsed_date,
+            DailyUserSummary.points_earned > 0,
+        )
     ).subquery()
 
     top_entries_query = (

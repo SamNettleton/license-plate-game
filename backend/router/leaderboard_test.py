@@ -31,9 +31,9 @@ async def test_get_daily_leaderboard_single_source(client, db):
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
-            VALUES (:user_1, :target_date, :points_1, :words_1, :elapsed_1, '{}'::jsonb),
-                   (:user_2, :target_date, :points_2, :words_2, :elapsed_2, '{}'::jsonb)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES (:user_1, :target_date, :points_1, :words_1, :elapsed_1, '{}'::jsonb, :archive_words_1, :archive_points_1),
+                   (:user_2, :target_date, :points_2, :words_2, :elapsed_2, '{}'::jsonb, :archive_words_2, :archive_points_2)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
@@ -47,6 +47,10 @@ async def test_get_daily_leaderboard_single_source(client, db):
             "words_2": ["gamma", "delta", "epsilon"],
             "elapsed_1": 30,
             "elapsed_2": 45,
+            "archive_words_1": [],
+            "archive_points_1": 0,
+            "archive_words_2": [],
+            "archive_points_2": 0,
         },
     )
     await db.flush()
@@ -90,8 +94,8 @@ async def test_get_daily_leaderboard_includes_user_rank_row_when_outside_top_ten
         await db.execute(
             text(
                 """
-                INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
-                VALUES (:user_id, :target_date, :points, :words, :elapsed, '{}'::jsonb)
+                INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+                VALUES (:user_id, :target_date, :points, :words, :elapsed, '{}'::jsonb, :archive_words, :archive_points)
                 ON CONFLICT (user_id, date) DO NOTHING
                 """
             ),
@@ -101,6 +105,8 @@ async def test_get_daily_leaderboard_includes_user_rank_row_when_outside_top_ten
                 "points": 1000 + index,
                 "words": [f"word-{index}"],
                 "elapsed": 60,
+                "archive_words": [],
+                "archive_points": 0,
             },
         )
 
@@ -113,8 +119,8 @@ async def test_get_daily_leaderboard_includes_user_rank_row_when_outside_top_ten
     await db.execute(
         text(
             """
-            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times)
-            VALUES (:user_id, :target_date, :points, :words, :elapsed, '{}'::jsonb)
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES (:user_id, :target_date, :points, :words, :elapsed, '{}'::jsonb, :archive_words, :archive_points)
             ON CONFLICT (user_id, date) DO NOTHING
             """
         ),
@@ -124,6 +130,8 @@ async def test_get_daily_leaderboard_includes_user_rank_row_when_outside_top_ten
             "points": 500,
             "words": ["small"],
             "elapsed": 120,
+            "archive_words": [],
+            "archive_points": 0,
         },
     )
     await db.flush()
@@ -145,6 +153,103 @@ async def test_get_daily_leaderboard_includes_user_rank_row_when_outside_top_ten
     assert payload["current_user"]["name"] == "Outside Player"
     assert payload["current_user"]["score"] == 500
     assert payload["current_user"]["is_current_user"] is True
+
+
+@pytest.mark.asyncio
+async def test_get_daily_leaderboard_excludes_zero_point_live_score_users(client, db):
+    target_date = date(2026, 8, 18)
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES
+                ('user-live', 'Live Player'),
+                ('user-archive-only', 'Archive Only Player')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    )
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES 
+                ('user-live', :target_date, 100, ARRAY['leap'], 30, '{}'::jsonb, '{}'::varchar[], 0),
+                ('user-archive-only', :target_date, 0, '{}'::varchar[], 0, '{}'::jsonb, ARRAY['past', 'word'], 250)
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {"target_date": target_date},
+    )
+    await db.flush()
+
+    with patch("router.leaderboard.datetime") as mock_datetime:
+        mock_datetime.now.return_value.date.return_value = TEST_TODAY
+        mock_datetime.strptime = datetime.strptime
+
+        response = await client.get(
+            "/api/leaderboard/daily",
+            params={"date": target_date.isoformat(), "user_id": "user-archive-only", "limit": 10},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["entries"]) == 1
+    assert payload["entries"][0]["name"] == "Live Player"
+    assert payload["entries"][0]["score"] == 100
+    assert payload["current_user"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_daily_leaderboard_ignores_archive_points_and_words(client, db):
+    target_date = date(2026, 8, 18)
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES
+                ('user-a', 'Player A'),
+                ('user-b', 'Player B')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    )
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES 
+                ('user-a', :target_date, 200, ARRAY['alpha'], 30, '{}'::jsonb, ARRAY['extra', 'words'], 1000),
+                ('user-b', :target_date, 300, ARRAY['beta', 'gamma'], 45, '{}'::jsonb, '{}'::varchar[], 0)
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {"target_date": target_date},
+    )
+    await db.flush()
+
+    with patch("router.leaderboard.datetime") as mock_datetime:
+        mock_datetime.now.return_value.date.return_value = TEST_TODAY
+        mock_datetime.strptime = datetime.strptime
+
+        response = await client.get(
+            "/api/leaderboard/daily",
+            params={"date": target_date.isoformat(), "limit": 10},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["entries"]) == 2
+    # Player B should rank #1 with 300 points despite Player A having 1200 total combined points
+    assert payload["entries"][0]["name"] == "Player B"
+    assert payload["entries"][0]["score"] == 300
+    assert payload["entries"][0]["words_found_count"] == 2
+
+    assert payload["entries"][1]["name"] == "Player A"
+    assert payload["entries"][1]["score"] == 200
+    assert payload["entries"][1]["words_found_count"] == 1
 
 
 @pytest.mark.asyncio

@@ -4,7 +4,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Daily from './Daily';
 import * as plateService from '../api/plateService';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { getLocalDailyDate } from '@/utils/date';
+import { getLocalDailyDate, formatDateKey } from '@/utils/date';
+import { EARLIEST_ACTIVE_DATE } from '@/constants/date';
+
+// Mock react-router-dom search params hooks
+const mockSetSearchParams = vi.fn();
+let mockSearchParams = new URLSearchParams();
+
+vi.mock('react-router-dom', () => ({
+  useSearchParams: () => [mockSearchParams, mockSetSearchParams],
+}));
 
 // Mock plateService API
 vi.mock('../api/plateService', () => ({
@@ -63,8 +72,19 @@ const createTestQueryClient = () =>
 describe('Daily Page', () => {
   let queryClient: QueryClient;
 
+  const mockDailyPlate = {
+    sequence: 'DAY',
+    solutionsCount: 10,
+    goalPoints: 20,
+    wordsFound: ['daylight'],
+    pointsEarned: 10,
+    elapsedSeconds: 45,
+    tierTimes: { Bronze: 30 },
+  };
+
   beforeEach(() => {
     queryClient = createTestQueryClient();
+    mockSearchParams = new URLSearchParams();
     vi.clearAllMocks();
   });
 
@@ -75,21 +95,11 @@ describe('Daily Page', () => {
   describe('Data Loading and Rendering', () => {
     it('renders loading state initially and then displays the game on success', async () => {
       const today = getLocalDailyDate();
-      const mockDailyPlate = {
-        sequence: 'DAY',
-        solutionsCount: 10,
-        goalPoints: 20,
-        wordsFound: ['daylight'],
-        pointsEarned: 10,
-        elapsedSeconds: 45,
-        tierTimes: { Bronze: 30 },
-      };
-
       vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockDailyPlate);
 
       render(<Daily />, { wrapper });
 
-      expect(screen.getByText(/Crafting a daily plate/i)).toBeInTheDocument();
+      expect(screen.getByText(/Crafting daily plate.../i)).toBeInTheDocument();
 
       const gameElement = await screen.findByTestId('mock-game');
       expect(gameElement).toBeInTheDocument();
@@ -100,7 +110,7 @@ describe('Daily Page', () => {
 
     it('passes all daily puzzle properties down to the Game component', async () => {
       const today = getLocalDailyDate();
-      const mockDailyPlate = {
+      const mockFullPlate = {
         sequence: 'LPG',
         solutionsCount: 15,
         goalPoints: 100,
@@ -110,7 +120,7 @@ describe('Daily Page', () => {
         tierTimes: { Parked: 15, 'Good Start': 45 },
       };
 
-      vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockDailyPlate);
+      vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockFullPlate);
 
       render(<Daily />, { wrapper });
 
@@ -134,6 +144,79 @@ describe('Daily Page', () => {
 
       const errorMsg = await screen.findByText(/Network Error/i);
       expect(errorMsg).toBeInTheDocument();
+    });
+  });
+
+  describe('URL Date Parameter Handling', () => {
+    it('fetches puzzle for valid target date supplied in query string', async () => {
+      const validDate = formatDateKey(EARLIEST_ACTIVE_DATE);
+      mockSearchParams = new URLSearchParams({ date: validDate });
+
+      vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockDailyPlate);
+
+      render(<Daily />, { wrapper });
+
+      await screen.findByTestId('mock-game');
+
+      expect(plateService.fetchDailyPlate).toHaveBeenCalledWith('test-player-123', validDate);
+      expect(mockSetSearchParams).not.toHaveBeenCalled();
+    });
+
+    it('strips parameter if target date matches local today date', async () => {
+      const today = getLocalDailyDate();
+      mockSearchParams = new URLSearchParams({ date: today });
+
+      vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockDailyPlate);
+
+      render(<Daily />, { wrapper });
+
+      await screen.findByTestId('mock-game');
+
+      expect(plateService.fetchDailyPlate).toHaveBeenCalledWith('test-player-123', today);
+      expect(mockSetSearchParams).toHaveBeenCalledTimes(1);
+      expect(mockSetSearchParams).toHaveBeenCalledWith(expect.any(Function), { replace: true });
+    });
+
+    it('falls back to local daily date and strips parameter if date format is invalid', async () => {
+      mockSearchParams = new URLSearchParams({ date: 'invalid-date-format' });
+      const today = getLocalDailyDate();
+
+      vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockDailyPlate);
+
+      render(<Daily />, { wrapper });
+
+      await screen.findByTestId('mock-game');
+
+      expect(plateService.fetchDailyPlate).toHaveBeenCalledWith('test-player-123', today);
+      expect(mockSetSearchParams).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to local daily date and strips parameter if date is before EARLIEST_ACTIVE_DATE', async () => {
+      mockSearchParams = new URLSearchParams({ date: '2020-01-01' });
+      const today = getLocalDailyDate();
+
+      vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockDailyPlate);
+
+      render(<Daily />, { wrapper });
+
+      await screen.findByTestId('mock-game');
+
+      expect(plateService.fetchDailyPlate).toHaveBeenCalledWith('test-player-123', today);
+      expect(mockSetSearchParams).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to local daily date and strips parameter if date exceeds getLatestActiveGlobalDate', async () => {
+      mockSearchParams = new URLSearchParams({ date: '2099-12-31' });
+      const today = getLocalDailyDate();
+
+      vi.mocked(plateService.fetchDailyPlate).mockResolvedValue(mockDailyPlate);
+
+      render(<Daily />, { wrapper });
+
+      await screen.findByTestId('mock-game');
+
+      expect(plateService.fetchDailyPlate).toHaveBeenCalledWith('test-player-123', today);
+      expect(mockSetSearchParams).toHaveBeenCalledTimes(1);
     });
   });
 });

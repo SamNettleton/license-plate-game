@@ -23,10 +23,20 @@ export default function Header() {
   const location = useLocation();
   const queryClient = useQueryClient();
 
-  const isHomePage = location.pathname === '/';
-  const isPracticePage = location.pathname === '/practice';
-  const isLeaderboardPage = location.pathname === '/leaderboard';
-  const isStatsPage = location.pathname === '/stats';
+  // Normalize path by stripping trailing slashes (except root '/')
+  const normalizedPathname =
+    location.pathname.length > 1 && location.pathname.endsWith('/')
+      ? location.pathname.slice(0, -1)
+      : location.pathname;
+
+  const isHomePage = normalizedPathname === '/';
+  const isPracticePage = normalizedPathname === '/practice';
+  const isDailyPage = normalizedPathname === '/daily';
+  const isLeaderboardPage = normalizedPathname === '/leaderboard';
+  const isStatsPage = normalizedPathname === '/stats';
+
+  const searchParams = new URLSearchParams(location.search);
+  const hasDateParam = searchParams.has('date');
 
   const handleRandomizeClick = () => {
     if (hasPracticeProgress()) {
@@ -41,37 +51,54 @@ export default function Header() {
   };
 
   const handleBackClick = () => {
-    const origin = (location.state as { origin?: string })?.origin;
+    const origin = (location.state as { origin?: string } | null)?.origin;
+
+    if ((isLeaderboardPage || isStatsPage) && origin) {
+      navigate({
+        pathname: origin,
+        search: location.search,
+      });
+      return;
+    }
+
+    if ((isDailyPage && hasDateParam) || origin === '/archive') {
+      navigate('/archive');
+      return;
+    }
+
     if (origin) {
-      navigate(origin);
+      navigate({
+        pathname: origin,
+        search: location.search,
+      });
     } else {
       navigate('/');
     }
   };
 
   const handleLeaderboardClick = () => {
-    const origin = (location.state as { origin?: string })?.origin || location.pathname;
+    const currentOrigin = (location.state as { origin?: string })?.origin || normalizedPathname;
     navigate(
       {
         pathname: '/leaderboard',
         search: location.search,
       },
       {
-        state: { origin: origin === '/leaderboard' ? '/' : origin },
+        state: { origin: currentOrigin === '/leaderboard' ? '/' : currentOrigin },
         replace: isStatsPage,
       },
     );
   };
 
   const handleStatsClick = () => {
-    const origin = (location.state as { origin?: string })?.origin || location.pathname;
+    const currentOrigin = (location.state as { origin?: string })?.origin || normalizedPathname;
     navigate(
       {
         pathname: '/stats',
         search: location.search,
       },
       {
-        state: { origin: origin === '/stats' ? '/' : origin },
+        state: { origin: currentOrigin === '/stats' ? '/' : currentOrigin },
         replace: isLeaderboardPage,
       },
     );
@@ -79,12 +106,19 @@ export default function Header() {
 
   const originPath = (location.state as { origin?: string } | null)?.origin;
 
-  const getBackTooltipTitle = (path?: string) => {
-    switch (path) {
+  const getBackTooltipTitle = () => {
+    if ((isDailyPage && hasDateParam) || originPath === '/archive') {
+      return 'Back to archive';
+    }
+
+    switch (originPath) {
       case '/daily':
+      case '/':
         return 'Back to daily game';
       case '/practice':
         return 'Back to practice mode';
+      case '/archive':
+        return 'Back to archive';
       default:
         return 'Back to home';
     }
@@ -92,7 +126,6 @@ export default function Header() {
 
   return (
     <AppBar position="static" color="transparent" elevation={0}>
-      {/* Confirmation Dialog for destructive action */}
       <ConfirmationDialog
         content="This will clear your current progress. Continue?"
         open={confirmOpen}
@@ -104,7 +137,7 @@ export default function Header() {
       <Toolbar sx={toolbarStyles}>
         <Box sx={{ minWidth: 48, gap: 1, display: 'flex' }}>
           {!isHomePage && (
-            <Tooltip title={getBackTooltipTitle(originPath)}>
+            <Tooltip title={getBackTooltipTitle()}>
               <IconButton
                 aria-label="back"
                 color="inherit"
