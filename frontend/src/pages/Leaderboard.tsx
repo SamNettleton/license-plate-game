@@ -4,6 +4,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Button,
+  ButtonBase,
   Divider,
   IconButton,
   Popover,
@@ -31,35 +32,56 @@ function Leaderboard() {
   const maxActiveDate = React.useMemo(() => getLatestActiveGlobalDate(), []);
   const minActiveDate = React.useMemo(() => toDateOnly(EARLIEST_ACTIVE_DATE), []);
 
-  const [selectedDate, setSelectedDate] = React.useState(() => {
-    const dateParam = searchParams.get('date');
-    if (dateParam) {
-      const parsed = new Date(`${dateParam}T00:00:00`);
-      if (!isNaN(parsed.getTime())) {
-        const bounded = toDateOnly(parsed);
-        if (bounded >= minActiveDate && bounded <= maxActiveDate) {
-          return bounded;
+  const parseParamDate = React.useCallback(
+    (paramVal: string | null): Date => {
+      if (paramVal) {
+        const parsed = new Date(`${paramVal}T00:00:00`);
+        if (!isNaN(parsed.getTime())) {
+          const bounded = toDateOnly(parsed);
+          if (bounded >= minActiveDate && bounded <= maxActiveDate) {
+            return bounded;
+          }
         }
       }
-    }
+      const today = toDateOnly(new Date());
+      if (today > maxActiveDate) return maxActiveDate;
+      if (today < minActiveDate) return minActiveDate;
+      return today;
+    },
+    [minActiveDate, maxActiveDate],
+  );
 
-    const today = toDateOnly(new Date());
-    if (today > maxActiveDate) return maxActiveDate;
-    if (today < minActiveDate) return minActiveDate;
-    return today;
-  });
+  const [selectedDate, setSelectedDate] = React.useState(() =>
+    parseParamDate(searchParams.get('date')),
+  );
+
+  // Sync state when URL search params change (e.g. browser back / forward)
+  React.useEffect(() => {
+    const paramDate = parseParamDate(searchParams.get('date'));
+    setSelectedDate(paramDate);
+  }, [searchParams, parseParamDate]);
 
   const [calendarAnchor, setCalendarAnchor] = React.useState<HTMLButtonElement | null>(null);
   const calendarOpen = Boolean(calendarAnchor);
 
-  React.useEffect(() => {
-    if (!searchParams.has('date')) {
+  const updateDate = React.useCallback(
+    (date: Date) => {
+      const bounded = toDateOnly(date);
+      if (bounded < minActiveDate || bounded > maxActiveDate) return;
+
+      const dateKey = formatDateKey(bounded);
+      setSelectedDate(bounded);
       setSearchParams(
-        { date: formatDateKey(selectedDate) },
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('date', dateKey);
+          return next;
+        },
         { replace: true, state: location.state },
       );
-    }
-  }, [searchParams, selectedDate, setSearchParams]);
+    },
+    [minActiveDate, maxActiveDate, setSearchParams, location.state],
+  );
 
   const handleOpenCalendar = (event: React.MouseEvent<HTMLButtonElement>) => {
     setCalendarAnchor(event.currentTarget);
@@ -77,19 +99,7 @@ function Leaderboard() {
   const moveByDays = (amount: number) => {
     const nextDate = addDays(selectedDate, amount);
     updateDate(nextDate);
-    handleCloseCalendar();
   };
-
-  const updateDate = React.useCallback(
-    (date: Date) => {
-      const bounded = toDateOnly(date);
-      if (bounded < minActiveDate || bounded > maxActiveDate) return;
-
-      setSelectedDate(bounded);
-      setSearchParams({ date: formatDateKey(bounded) }, { replace: true, state: location.state });
-    },
-    [minActiveDate, maxActiveDate, setSearchParams],
-  );
 
   const selectedDateKey = formatDateKey(selectedDate);
 
@@ -105,9 +115,6 @@ function Leaderboard() {
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
-
-  const leaderboardEntries = leaderboard.entries;
-  const currentUserEntry = leaderboard.currentUser;
 
   const monthLabel = selectedDate.toLocaleDateString(undefined, {
     month: 'long',
@@ -126,9 +133,7 @@ function Leaderboard() {
   return (
     <Box sx={pageContainerStyles}>
       <Box sx={contentLayoutStyles}>
-        {/* Main Leaderboard Card */}
         <Box sx={leaderboardCardStyles}>
-          {/* Header Row */}
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Typography variant="h5" fontWeight={700}>
               Leaderboard
@@ -161,7 +166,6 @@ function Leaderboard() {
             </Stack>
           </Stack>
 
-          {/* Date Selector Row */}
           <Stack
             direction="row"
             spacing={1}
@@ -178,14 +182,14 @@ function Leaderboard() {
               <ArrowBackIcon />
             </IconButton>
 
-            <Box component="button" onClick={handleOpenCalendar} sx={dateSelectorButtonStyles}>
+            <ButtonBase onClick={handleOpenCalendar} sx={dateSelectorButtonStyles}>
               <Typography variant="caption" color="text.secondary" display="block">
                 {monthLabel}
               </Typography>
               <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
                 {selectedLabel}
               </Typography>
-            </Box>
+            </ButtonBase>
 
             <IconButton
               aria-label="next day"
@@ -213,11 +217,10 @@ function Leaderboard() {
               </Button>
             </Box>
           ) : (
-            <LeaderboardTable entries={leaderboardEntries} currentUser={currentUserEntry} />
+            <LeaderboardTable entries={leaderboard.entries} currentUser={leaderboard.currentUser} />
           )}
         </Box>
 
-        {/* Desktop Sidebar Calendar */}
         {isDesktop && (
           <Box sx={desktopSidebarStyles}>
             <Calendar
@@ -229,7 +232,6 @@ function Leaderboard() {
           </Box>
         )}
 
-        {/* Mobile Popover Calendar */}
         {!isDesktop && (
           <Popover
             open={calendarOpen}
@@ -288,12 +290,12 @@ const leaderboardCardStyles = {
 };
 
 const dateSelectorButtonStyles = {
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
   textAlign: 'center',
   p: 0.5,
   borderRadius: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
   '&:hover': { bgcolor: 'action.hover' },
 };
 

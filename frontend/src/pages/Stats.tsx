@@ -31,34 +31,46 @@ export default function Stats() {
   const maxActiveDate = React.useMemo(() => getLatestActiveGlobalDate(), []);
   const minActiveDate = React.useMemo(() => toDateOnly(EARLIEST_ACTIVE_DATE), []);
 
-  const [selectedDate, setSelectedDate] = React.useState(() => {
-    const dateParam = searchParams.get('date');
-    if (dateParam) {
-      const parsed = new Date(`${dateParam}T00:00:00`);
-      if (!isNaN(parsed.getTime())) {
-        const bounded = toDateOnly(parsed);
-        if (bounded >= minActiveDate && bounded <= maxActiveDate) {
-          return bounded;
+  const parseAndValidateDate = React.useCallback(
+    (dateStr: string | null) => {
+      if (dateStr) {
+        const parsed = new Date(`${dateStr}T00:00:00`);
+        if (!isNaN(parsed.getTime())) {
+          const bounded = toDateOnly(parsed);
+          if (bounded >= minActiveDate && bounded <= maxActiveDate) {
+            return bounded;
+          }
         }
       }
-    }
 
-    const today = toDateOnly(new Date());
-    if (today > maxActiveDate) return maxActiveDate;
-    if (today < minActiveDate) return minActiveDate;
-    return today;
-  });
+      const today = toDateOnly(new Date());
+      if (today > maxActiveDate) return maxActiveDate;
+      if (today < minActiveDate) return minActiveDate;
+      return today;
+    },
+    [minActiveDate, maxActiveDate],
+  );
+
+  const [selectedDate, setSelectedDate] = React.useState(() =>
+    parseAndValidateDate(searchParams.get('date')),
+  );
   const [calendarAnchor, setCalendarAnchor] = React.useState<HTMLButtonElement | null>(null);
   const calendarOpen = Boolean(calendarAnchor);
 
   React.useEffect(() => {
-    if (!searchParams.has('date')) {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      const validatedDate = parseAndValidateDate(dateParam);
+      if (formatDateKey(validatedDate) !== formatDateKey(selectedDate)) {
+        setSelectedDate(validatedDate);
+      }
+    } else {
       setSearchParams(
         { date: formatDateKey(selectedDate) },
         { replace: true, state: location.state },
       );
     }
-  }, [searchParams, selectedDate, setSearchParams]);
+  }, [searchParams, selectedDate, setSearchParams, parseAndValidateDate, location.state]);
 
   const handleOpenCalendar = (event: React.MouseEvent<HTMLButtonElement>) => {
     setCalendarAnchor(event.currentTarget);
@@ -87,7 +99,7 @@ export default function Stats() {
       setSelectedDate(bounded);
       setSearchParams({ date: formatDateKey(bounded) }, { replace: true, state: location.state });
     },
-    [minActiveDate, maxActiveDate, setSearchParams],
+    [minActiveDate, maxActiveDate, setSearchParams, location.state],
   );
 
   const selectedDateKey = formatDateKey(selectedDate);
