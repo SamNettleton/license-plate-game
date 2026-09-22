@@ -53,27 +53,17 @@ export default function Header() {
   const handleBackClick = () => {
     const origin = (location.state as { origin?: string } | null)?.origin;
 
-    if ((isLeaderboardPage || isStatsPage) && origin) {
-      navigate({
-        pathname: origin,
-        search: location.search,
-      });
-      return;
-    }
-
     if ((isDailyPage && hasDateParam) || origin === '/archive') {
-      navigate('/archive');
+      navigate('/archive', { replace: true });
       return;
     }
 
     if (origin) {
-      navigate({
-        pathname: origin,
-        search: location.search,
-      });
-    } else {
-      navigate('/');
+      navigate(-1);
+      return;
     }
+
+    navigate('/', { replace: true });
   };
 
   const handleLeaderboardClick = () => {
@@ -84,7 +74,9 @@ export default function Header() {
         search: location.search,
       },
       {
-        state: { origin: currentOrigin === '/leaderboard' ? '/' : currentOrigin },
+        state: {
+          origin: currentOrigin === '/leaderboard' ? '/' : currentOrigin,
+        },
         replace: isStatsPage,
       },
     );
@@ -98,7 +90,9 @@ export default function Header() {
         search: location.search,
       },
       {
-        state: { origin: currentOrigin === '/stats' ? '/' : currentOrigin },
+        state: {
+          origin: currentOrigin === '/stats' ? '/' : currentOrigin,
+        },
         replace: isLeaderboardPage,
       },
     );

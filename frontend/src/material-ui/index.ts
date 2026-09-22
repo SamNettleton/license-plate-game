@@ -6,6 +6,7 @@ Use with *absolute path* for clarity, i.e. `import { Button } from 'material-ui'
 */
 
 export { default as Button } from '@mui/material/Button';
+export { default as ButtonBase } from '@mui/material/ButtonBase';
 export { default as IconButton } from '@mui/material/IconButton';
 export { ThemeProvider, useColorScheme, createTheme } from '@mui/material/styles';
 export { default as CssBaseline } from '@mui/material/CssBaseline';
