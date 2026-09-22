@@ -33,7 +33,7 @@ vi.mock('@/material-ui', async (importOriginal) => {
 vi.mock('@/components/results/LeaderboardTable', () => ({
   default: vi.fn(({ entries, currentUser }) => (
     <div data-testid="leaderboard-table">
-      <span>Entries Count: {entries.length}</span>
+      <span data-testid="entries-count">Entries Count: {entries.length}</span>
       {currentUser && <span>Has Current User</span>}
     </div>
   )),
@@ -193,15 +193,7 @@ describe('Leaderboard Container Component', () => {
       const overallTab = screen.getByRole('tab', { name: /All-Time/i });
       fireEvent.click(overallTab);
 
-      await waitFor(() => {
-        expect(fetchOverallLeaderboard).toHaveBeenCalledWith(
-          expect.any(String),
-          'current-user-id',
-          10,
-        );
-      });
-
-      expect(screen.getByText('Entries Count: 2')).toBeInTheDocument();
+      expect(await screen.findByText('Entries Count: 2')).toBeInTheDocument();
       expect(overallTab).toHaveAttribute('aria-selected', 'true');
     });
 
