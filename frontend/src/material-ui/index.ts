@@ -38,6 +38,8 @@ export { default as Snackbar } from '@mui/material/Snackbar';
 export { default as useMediaQuery } from '@mui/material/useMediaQuery';
 export { default as FormControlLabel } from '@mui/material/FormControlLabel';
 export { default as Switch } from '@mui/material/Switch';
+export { default as Tab } from '@mui/material/Tab';
+export { default as Tabs } from '@mui/material/Tabs';
 export { default as Table } from '@mui/material/Table';
 export { default as TableBody } from '@mui/material/TableBody';
 export { default as TableCell } from '@mui/material/TableCell';

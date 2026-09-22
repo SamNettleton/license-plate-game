@@ -7,6 +7,11 @@ from sqlalchemy import text
 TEST_TODAY = date(2026, 8, 18)
 
 
+# ============================================================================
+# /daily Endpoint Tests
+# ============================================================================
+
+
 @pytest.mark.asyncio
 async def test_get_daily_leaderboard_single_source(client, db):
     live_date = date(2026, 8, 18)
@@ -242,7 +247,6 @@ async def test_get_daily_leaderboard_ignores_archive_points_and_words(client, db
     assert response.status_code == 200
     payload = response.json()
     assert len(payload["entries"]) == 2
-    # Player B should rank #1 with 300 points despite Player A having 1200 total combined points
     assert payload["entries"][0]["name"] == "Player B"
     assert payload["entries"][0]["score"] == 300
     assert payload["entries"][0]["words_found_count"] == 2
@@ -281,3 +285,106 @@ async def test_get_daily_leaderboard_invalid_date_format(client):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Date must be in YYYY-MM-DD format."
+
+
+# ============================================================================
+# /overall Endpoint Tests
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_overall_leaderboard_combines_live_and_archive(client, db):
+    target_date = date(2026, 8, 18)
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES
+                ('user-1', 'Combine Champ'),
+                ('user-2', 'Live Only')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    )
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES 
+                ('user-1', :target_date, 300, ARRAY['apple'], 30, '{}'::jsonb, ARRAY['banana', 'cherry'], 700),
+                ('user-2', :target_date, 800, ARRAY['dragon', 'elder'], 45, '{}'::jsonb, '{}'::varchar[], 0)
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {"target_date": target_date},
+    )
+    await db.flush()
+
+    with patch("router.leaderboard.datetime") as mock_datetime:
+        mock_datetime.now.return_value.date.return_value = TEST_TODAY
+        mock_datetime.strptime = datetime.strptime
+
+        response = await client.get(
+            "/api/leaderboard/overall",
+            params={"date": target_date.isoformat(), "user_id": "user-1", "limit": 10},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["entries"]) == 2
+    # Combined points: user-1 has 300 + 700 = 1000, user-2 has 800 + 0 = 800
+    assert payload["entries"][0]["name"] == "Combine Champ"
+    assert payload["entries"][0]["score"] == 1000
+    assert payload["entries"][0]["words_found_count"] == 3
+    assert payload["entries"][0]["is_current_user"] is True
+
+    assert payload["entries"][1]["name"] == "Live Only"
+    assert payload["entries"][1]["score"] == 800
+    assert payload["entries"][1]["words_found_count"] == 2
+    assert payload["entries"][1]["is_current_user"] is False
+
+
+@pytest.mark.asyncio
+async def test_get_overall_leaderboard_excludes_zero_total_point_users(client, db):
+    target_date = date(2026, 8, 18)
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES
+                ('user-active', 'Active User'),
+                ('user-zero', 'Zero User')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    )
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (user_id, date, points_earned, words_found, elapsed_seconds, tier_times, archive_words_found, archive_points_earned)
+            VALUES 
+                ('user-active', :target_date, 0, '{}'::varchar[], 0, '{}'::jsonb, ARRAY['archived'], 150),
+                ('user-zero', :target_date, 0, '{}'::varchar[], 0, '{}'::jsonb, '{}'::varchar[], 0)
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {"target_date": target_date},
+    )
+    await db.flush()
+
+    with patch("router.leaderboard.datetime") as mock_datetime:
+        mock_datetime.now.return_value.date.return_value = TEST_TODAY
+        mock_datetime.strptime = datetime.strptime
+
+        response = await client.get(
+            "/api/leaderboard/overall",
+            params={"date": target_date.isoformat(), "limit": 10},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["entries"]) == 1
+    assert payload["entries"][0]["name"] == "Active User"
+    assert payload["entries"][0]["score"] == 150

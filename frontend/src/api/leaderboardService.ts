@@ -80,3 +80,25 @@ export const fetchDailyLeaderboard = async (
       : undefined,
   };
 };
+
+export const fetchOverallLeaderboard = async (
+  date: string,
+  userId?: string,
+  limit = 10,
+): Promise<LeaderboardResponse> => {
+  const { data } = await api.get<RawLeaderboardResponse>('/leaderboard/overall', {
+    params: {
+      date,
+      user_id: userId,
+      limit,
+    },
+  });
+
+  return {
+    date: data.date,
+    entries: (data.entries ?? []).map((entry) => normalizeLeaderboardEntry(entry, userId)),
+    currentUser: data.current_user
+      ? normalizeLeaderboardEntry(data.current_user, userId)
+      : undefined,
+  };
+};
