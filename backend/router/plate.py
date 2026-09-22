@@ -62,8 +62,8 @@ async def get_daily_plate(
         summary = result.scalars().first()
 
         if summary:
-            words_found = summary.words_found or []
-            points_earned = summary.points_earned or 0
+            words_found = (summary.words_found or []) + (summary.archive_words_found or [])
+            points_earned = (summary.points_earned or 0) + (summary.archive_points_earned or 0)
             elapsed_seconds = summary.elapsed_seconds or 0
             tier_times = summary.tier_times or {}
 

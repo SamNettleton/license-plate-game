@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 import sys
 import os
+from sqlalchemy import text
+from datetime import date
 
 # Ensure we can import from backend
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -53,6 +55,70 @@ async def test_get_daily_plate(client, db):
 
     assert isinstance(data["tier_times"], dict)
     assert data["tier_times"] == {}
+
+@pytest.mark.asyncio
+async def test_get_user_stats_includes_archive_data(client, db):
+    target_date = date(2026, 8, 18)
+    user_id = "test-user"
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO users (id, display_name) VALUES
+                (:id, :name)
+            ON CONFLICT (id) DO NOTHING
+            """
+        ),
+        {
+            "id": user_id,
+            "name": "Test Name"
+        },
+    )
+
+    await db.execute(
+        text(
+            """
+            INSERT INTO daily_user_summaries (
+                user_id, 
+                date, 
+                points_earned, 
+                words_found, 
+                elapsed_seconds, 
+                tier_times, 
+                archive_words_found, 
+                archive_points_earned
+            )
+            VALUES (
+                :user_id, 
+                :target_date, 
+                0, 
+                '{}'::varchar[], 
+                0, 
+                '{}'::jsonb, 
+                :archive_words, 
+                :archive_points
+            )
+            ON CONFLICT (user_id, date) DO NOTHING
+            """
+        ),
+        {
+            "user_id": user_id,
+            "target_date": target_date,
+            "archive_words": ["plate", "license", "drive"],
+            "archive_points": 150,
+        },
+    )
+    await db.flush()
+
+    response = await client.get(f"/api/plate/daily", params={"user_id": user_id, "date": target_date.isoformat()})
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "words_found" in data
+    assert "points_earned" in data
+    assert data["words_found"] == ["plate", "license", "drive"]
+    assert data["points_earned"] == 150
 
 # DEPRECATED: The random plate endpoint is no longer used in the game. 
 # It has been commented out to avoid confusion, but may be used in the future if needed.
