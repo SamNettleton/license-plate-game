@@ -9,6 +9,8 @@ import {
   IconButton,
   Popover,
   Stack,
+  Tab,
+  Tabs,
   Typography,
   useMediaQuery,
   useTheme,
@@ -17,10 +19,16 @@ import { ArrowBackIcon, ArrowForwardIcon, CalendarIcon, RefreshIcon } from '@ico
 import { formatDateKey, toDateOnly, addDays, getLatestActiveGlobalDate } from '@/utils/date';
 import { EARLIEST_ACTIVE_DATE } from '@/constants/date';
 import { useSettings } from '@/context/SettingsContext';
-import { fetchDailyLeaderboard, type LeaderboardResponse } from '@/api/leaderboardService';
+import {
+  fetchDailyLeaderboard,
+  fetchOverallLeaderboard,
+  type LeaderboardResponse,
+} from '@/api/leaderboardService';
 import { Calendar } from '@/components/common/Calendar';
 import LoadingDisplay from '@/components/feedback/LoadingDisplay';
 import LeaderboardTable from '@/components/results/LeaderboardTable';
+
+type LeaderboardTab = 'daily' | 'overall';
 
 function Leaderboard() {
   const theme = useTheme();
@@ -28,6 +36,8 @@ function Leaderboard() {
   const { settings } = useSettings();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+
+  const [activeTab, setActiveTab] = React.useState<LeaderboardTab>('daily');
 
   const maxActiveDate = React.useMemo(() => getLatestActiveGlobalDate(), []);
   const minActiveDate = React.useMemo(() => toDateOnly(EARLIEST_ACTIVE_DATE), []);
@@ -103,18 +113,31 @@ function Leaderboard() {
 
   const selectedDateKey = formatDateKey(selectedDate);
 
+  const dailyQuery = useQuery<LeaderboardResponse>({
+    queryKey: ['dailyLeaderboard', selectedDateKey, settings.playerId],
+    queryFn: () => fetchDailyLeaderboard(selectedDateKey, settings.playerId, 10),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    enabled: activeTab === 'daily',
+  });
+
+  const overallQuery = useQuery<LeaderboardResponse>({
+    queryKey: ['overallLeaderboard', selectedDateKey, settings.playerId],
+    queryFn: () => fetchOverallLeaderboard(selectedDateKey, settings.playerId, 10),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    enabled: activeTab === 'overall',
+  });
+
+  const activeQuery = activeTab === 'daily' ? dailyQuery : overallQuery;
+
   const {
     data: leaderboard = { entries: [], currentUser: undefined },
     isLoading,
     isFetching,
     error,
     refetch,
-  } = useQuery<LeaderboardResponse>({
-    queryKey: ['dailyLeaderboard', selectedDateKey, settings.playerId],
-    queryFn: () => fetchDailyLeaderboard(selectedDateKey, settings.playerId, 10),
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-  });
+  } = activeQuery;
 
   const monthLabel = selectedDate.toLocaleDateString(undefined, {
     month: 'long',
@@ -130,11 +153,15 @@ function Leaderboard() {
   const isPrevDayDisabled = selectedDate <= minActiveDate;
   const isNextDayDisabled = selectedDate >= maxActiveDate;
 
+  const handleTabChange = (_: React.SyntheticEvent, newValue: LeaderboardTab) => {
+    setActiveTab(newValue);
+  };
+
   return (
     <Box sx={pageContainerStyles}>
       <Box sx={contentLayoutStyles}>
         <Box sx={leaderboardCardStyles}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
             <Typography variant="h5" fontWeight={700}>
               Leaderboard
             </Typography>
@@ -201,6 +228,16 @@ function Leaderboard() {
             </IconButton>
           </Stack>
 
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="leaderboard navigation tabs"
+            sx={{ mb: 2, minHeight: 40 }}
+          >
+            <Tab label="Release Day" value="daily" sx={{ minHeight: 40, fontWeight: 600 }} />
+            <Tab label="All-Time" value="overall" sx={{ minHeight: 40, fontWeight: 600 }} />
+          </Tabs>
+
           <Divider sx={{ mb: 2 }} />
 
           {isLoading ? (
@@ -210,7 +247,9 @@ function Leaderboard() {
           ) : error ? (
             <Box sx={errorStateContainerStyles}>
               <Typography variant="body1" color="text.secondary">
-                Unable to load the leaderboard for this day.
+                {activeTab === 'daily'
+                  ? 'Unable to load the leaderboard for this day.'
+                  : 'Unable to load overall leaderboard.'}
               </Typography>
               <Button variant="contained" onClick={() => void refetch()} sx={{ mt: 2 }}>
                 Retry
